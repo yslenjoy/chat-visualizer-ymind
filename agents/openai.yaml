@@ -1,0 +1,3 @@
+interface:
+  display_name: "YMind Chat Visualizer"
+  short_description: "Turn chat transcripts into YMind thinking graphs"
