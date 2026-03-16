@@ -9,15 +9,22 @@ Turn any AI conversation into a structured thinking map.
 
 ## Input
 
-The user provides a conversation transcript in one of these formats:
-- Plain text (copy-pasted from ChatGPT, Claude, etc.)
+The user provides one of:
+- A share URL (ChatGPT / Gemini / Claude)
+- Plain text (copy-pasted conversation)
 - JSON with a `messages` array (each message has `role` and `content`)
-- A file path to a conversation export
 
-If the input is plain text, first parse it into structured turns. Look for patterns like:
+**If input is a URL**, run the fetch script first:
+
+```bash
+python3 scripts/fetch-chat.py "<url>" --out /tmp/raw_chat.json
+```
+
+Then read `/tmp/raw_chat.json` and use `items[0].messages` as the conversation input.
+
+**If input is plain text**, parse it into structured turns. Look for patterns like:
 - "User:", "Assistant:", "Human:", "AI:", "ChatGPT:", "Claude:" prefixes
 - Alternating speaker patterns
-- Timestamp-prefixed messages
 
 ## Task
 
@@ -142,6 +149,26 @@ Action: {what to do}
 | Spark | N | ... |
 | Action | N | ... |
 ```
+
+## File Storage
+
+Store generated files under the agent workspace. Do not write inside the skill directory.
+
+Recommended structure:
+
+```
+workspace/
+  ymind/
+    run_<timestamp-or-uuid>/
+      raw_chat.json
+      graph.json
+      graph.html
+```
+
+Guidelines:
+- Temp files go to `/tmp` or a runtime temp directory.
+- Keep `raw_chat.json`, `graph.json`, and `graph.html` for reproducibility.
+- Return the path to the final visualization file (`graph.html`) or the primary artifact (`graph.json`).
 
 ## Language Rule
 
