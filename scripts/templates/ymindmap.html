@@ -211,6 +211,22 @@
         }
         .status-toast.visible { opacity: 1; }
 
+        /* View Toggle */
+        .view-toggle {
+            display: flex; border-radius: 10px; overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(11,15,25,0.7); backdrop-filter: blur(8px);
+        }
+        .toggle-btn {
+            padding: 6px 14px; font-size: 12px; font-weight: 500;
+            background: transparent; border: none; color: #6b7280;
+            cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em;
+            font-family: 'Inter', sans-serif;
+        }
+        .toggle-btn:first-child { border-right: 1px solid rgba(255,255,255,0.08); }
+        .toggle-btn:hover { color: #e5e7eb; }
+        .toggle-btn.active { background: rgba(0,240,255,0.12); color: var(--aura-cyan); }
+
         /* Focus mode dimming */
         .graph-container.focus-mode .node-group { opacity: 0.15; }
         .graph-container.focus-mode .node-group.highlighted { opacity: 1; }
@@ -353,7 +369,13 @@
             <div class="hud-title" id="graphTitle">YMind</div>
         </div>
 
-        <!-- HUD Top Right: reserved for future editing features -->
+        <!-- HUD Top Right: View toggle -->
+        <div class="hud-top-right">
+            <div class="view-toggle" id="viewToggle">
+                <button class="toggle-btn active" id="btnTimeline" onclick="setView('timeline')" title="Timeline view — nodes spread by conversation turn">⏱ Timeline</button>
+                <button class="toggle-btn" id="btnStructure" onclick="setView('structure')" title="Structure view — nodes grouped by type (fact / friction / spark / action)">◈ Structure</button>
+            </div>
+        </div>
 
         <!-- HUD Bottom Left: Legend -->
         <div class="hud-bottom-left">
@@ -669,6 +691,43 @@
             const ty = h/2 - scale*(y0+y1)/2;
             svg.transition().duration(duration||600)
                .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
+        }
+
+        // ============== View Toggle ==============
+        let currentView = 'timeline';
+
+        function setView(view) {
+            if (!simulation || view === currentView) return;
+            currentView = view;
+
+            // Update button states
+            document.getElementById('btnTimeline').classList.toggle('active', view === 'timeline');
+            document.getElementById('btnStructure').classList.toggle('active', view === 'structure');
+
+            if (view === 'timeline') {
+                // Restore turn-based horizontal spread
+                simulation
+                    .force('x', d3.forceX().x(d => d.type==='root' ? 0 : (d.turn_id||0.5)*config.layout.turnSpacing).strength(0.6))
+                    .force('y', d3.forceY(d => (config.yOffsets[d.type]||0)+(d.inTurnIndex||0)*40).strength(config.layout.yStrength));
+            } else {
+                // Structure: group by type into quadrants
+                const w = window.innerWidth, h = window.innerHeight;
+                const cx = 0, cy = 0; // simulation center
+                const spread = Math.min(w, h) * 0.28;
+                const typePos = {
+                    root:     { x: cx,            y: cy },
+                    fact:     { x: cx - spread*0.6, y: cy - spread*0.5 },
+                    friction: { x: cx - spread*0.5, y: cy + spread*0.1 },
+                    spark:    { x: cx + spread*0.5, y: cy - spread*0.1 },
+                    action:   { x: cx + spread*0.3, y: cy + spread*0.6 },
+                };
+                simulation
+                    .force('x', d3.forceX().x(d => (typePos[d.type]||typePos.fact).x).strength(0.5))
+                    .force('y', d3.forceY().y(d => (typePos[d.type]||typePos.fact).y).strength(0.5));
+            }
+
+            simulation.alpha(0.5).restart();
+            setTimeout(() => fitAll(600), 1800);
         }
 
         // ============== Helpers ==============
