@@ -8,14 +8,7 @@ Supported:
 - Claude:  https://claude.ai/share/...  (Playwright, headed mode for Cloudflare)
 
 Example:
-  conda run -n ymind python3 fetch_shared_chats.py \
-    "https://chatgpt.com/share/69b29d70-4e00-800e-a45e-78132eb5c71c" \
-    --out shared_chats.json
-
-Test links:
-  https://chatgpt.com/share/69b29d70-4e00-800e-a45e-78132eb5c71c
-  https://gemini.google.com/share/e8179bbd1fdd
-  https://claude.ai/share/2be83452-2050-4ba8-bcf6-ddb01148b3f4
+  python3 fetch-chat.py "https://chatgpt.com/share/..." --out raw_chat.json
 """
 
 from __future__ import annotations
@@ -147,8 +140,8 @@ def _fetch_gemini(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str,
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
         page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
-        # Wait for JS to render the conversation
-        page.wait_for_timeout(8000)
+        # Wait for JS to render the conversation (Gemini share pages need ~12s)
+        page.wait_for_timeout(12000)
 
         title = page.title() or None
         # Clean up default title

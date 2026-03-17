@@ -14,13 +14,15 @@ The user provides one of:
 - Plain text (copy-pasted conversation)
 - JSON with a `messages` array (each message has `role` and `content`)
 
-**If input is a URL**, run the fetch script first:
+**If input is a URL**, first create the run directory (see File Storage), then run the fetch script:
 
 ```bash
-python3 scripts/fetch-chat.py "<url>" --out /tmp/raw_chat.json
+python3 scripts/fetch-chat.py "<url>" --out <run_dir>/raw_chat.json
 ```
 
-Then read `/tmp/raw_chat.json` and use `items[0].messages` as the conversation input.
+Then read `<run_dir>/raw_chat.json` and use `items[0].messages` as the conversation input.
+
+**ChatGPT 403 fallback**: `fetch-chat.py` calls ChatGPT's private `/backend-api/share/...` endpoint. Without auth cookies it returns 403. If this happens, open the share URL in the browser, select-all and copy the full conversation text, then proceed as plain text input below.
 
 **If input is plain text**, parse it into structured turns. Look for patterns like:
 - "User:", "Assistant:", "Human:", "AI:", "ChatGPT:", "Claude:" prefixes
@@ -115,6 +117,14 @@ Return the result as a JSON code block with this structure. Use the schema in `r
 }
 ```
 
+**After writing graph.json**, validate before proceeding:
+
+```bash
+python3 -c "import json; json.load(open('<run_dir>/graph.json'))" && echo "JSON valid"
+```
+
+Fix any parse errors before running `render-html.py`. The most common cause is unescaped Chinese curly quotes (`"` `"`) inside string values — use `「」` or `『』` for emphasis instead, or rewrite without quotes.
+
 After the JSON block, provide a Markdown summary for human reading.
 
 Markdown summary format:
@@ -169,7 +179,7 @@ Example for a run on 2026-03-17 at 14:30:00:
 
 Rules:
 - Create the run directory before writing any files.
-- `/tmp` is only acceptable for intermediate files that are immediately moved to the run directory.
+- All files go into the run directory. Do not use `/tmp` at any step.
 - After all steps complete, report the full path to the run directory and list its files.
 - If `render-html.py` is not run (user only wants JSON), `graph.html` is optional.
 
@@ -186,7 +196,7 @@ pip install -r requirements.txt
 playwright install chromium   # only needed for Gemini/Claude share URLs
 ```
 
-`render-html.py` has no external dependencies.
+`render-html.py` has no external dependencies for basic rendering. It also supports `--screenshot` / `-s` to capture a PNG of the visualization (requires `playwright install chromium`). Note: the script spins up a headless Chromium + waits 3 s for D3 simulation to settle, so it adds ~5 s versus opening the HTML in your browser and screenshotting manually.
 
 ## Notes
 
@@ -194,4 +204,3 @@ playwright install chromium   # only needed for Gemini/Claude share URLs
 - If the conversation has multiple distinct topics, group nodes by topic in the graph
 - The JSON output is designed to be machine-readable so other tools can consume it for further analysis or HTML visualization
 - **Known issue**: `g.co/gemini/share/...` short links are not auto-detected as Gemini URLs. Pass the resolved URL (`gemini.google.com/share/...`) directly to `fetch-chat.py`. TODO: add redirect-following in `_guess_provider()`.
-- **Known issue**: LLM-generated JSON may contain unescaped Chinese curly quotes (`"` `"`) inside string values, breaking JSON parsing. If `json.loads` fails, run: `python3 -c "import json,sys; t=open(sys.argv[1]).read(); t=t.replace('\"','\\\"').replace('\"','\\\"'); open(sys.argv[1],'w').write(t)" graph.json`
