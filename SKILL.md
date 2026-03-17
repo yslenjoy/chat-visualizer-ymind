@@ -45,8 +45,8 @@ Rules for node extraction:
 - English labels: Title Case. Chinese labels: natural phrasing.
 - Each node needs a `rich_summary`: a self-contained 1-2 sentence description
 - Mark `source` as "user" or "ai" based on who introduced the idea
-- Mark `turn_id` to track which conversation turn it came from
-- Typically extract 2-5 nodes per turn, but skip turns with little substance
+- Mark `turn_id` to track which conversation turn it came from (integer, starting from 1). This is critical for visualization layout — nodes with different `turn_id` values spread horizontally. Always assign the actual turn number, never default all nodes to the same value.
+- Typically extract 2-5 nodes per turn. Whether a turn has substance is judged by the **AI response content**, not the user message length. A 2-character user message like "继续" or "需要" can still produce a substantive AI response worth extracting. Only skip a turn if the AI response itself is off-topic or contains no reasoning content (e.g., a system message about app settings).
 
 Relations between nodes:
 - `causes`: Fact -> Friction (this fact creates this problem)
@@ -152,30 +152,46 @@ Action: {what to do}
 
 ## File Storage
 
-Store generated files under the agent workspace. Do not write inside the skill directory.
+**All output files MUST go into a single run directory.** Do not scatter files across `/tmp`, Downloads, or the skill directory.
 
-Recommended structure:
-
+Required run directory path:
 ```
-workspace/
-  ymind/
-    run_<timestamp-or-uuid>/
-      raw_chat.json
-      graph.json
-      graph.html
+~/workspace/ymind/run_<yyyymmdd-HHMMSS>/
 ```
 
-Guidelines:
-- Temp files go to `/tmp` or a runtime temp directory.
-- Keep `raw_chat.json`, `graph.json`, and `graph.html` for reproducibility.
-- Return the path to the final visualization file (`graph.html`) or the primary artifact (`graph.json`).
+Example for a run on 2026-03-17 at 14:30:00:
+```
+~/workspace/ymind/run_20260317-143000/
+  raw_chat.json    ← fetch-chat.py output (input data, keep for reproducibility)
+  graph.json       ← LLM-generated graph (the primary artifact)
+  graph.html       ← render-html.py output (shareable visualization)
+```
+
+Rules:
+- Create the run directory before writing any files.
+- `/tmp` is only acceptable for intermediate files that are immediately moved to the run directory.
+- After all steps complete, report the full path to the run directory and list its files.
+- If `render-html.py` is not run (user only wants JSON), `graph.html` is optional.
 
 ## Language Rule
 
 All output (labels, summaries, analysis) must match the language of the conversation. If the conversation is in Chinese, output in Chinese. If in English, output in English.
+
+## Setup
+
+Install Python dependencies before running scripts:
+
+```bash
+pip install -r requirements.txt
+playwright install chromium   # only needed for Gemini/Claude share URLs
+```
+
+`render-html.py` has no external dependencies.
 
 ## Notes
 
 - For very long conversations (20+ turns), focus on the most significant nodes rather than extracting everything
 - If the conversation has multiple distinct topics, group nodes by topic in the graph
 - The JSON output is designed to be machine-readable so other tools can consume it for further analysis or HTML visualization
+- **Known issue**: `g.co/gemini/share/...` short links are not auto-detected as Gemini URLs. Pass the resolved URL (`gemini.google.com/share/...`) directly to `fetch-chat.py`. TODO: add redirect-following in `_guess_provider()`.
+- **Known issue**: LLM-generated JSON may contain unescaped Chinese curly quotes (`"` `"`) inside string values, breaking JSON parsing. If `json.loads` fails, run: `python3 -c "import json,sys; t=open(sys.argv[1]).read(); t=t.replace('\"','\\\"').replace('\"','\\\"'); open(sys.argv[1],'w').write(t)" graph.json`

@@ -16,6 +16,9 @@ import argparse
 import json
 import re
 import sys
+import threading
+import time
+from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
 TEMPLATE_PATH = Path(__file__).parent / "templates" / "ymindmap.html"
@@ -45,6 +48,7 @@ def main() -> int:
     parser.add_argument("input", help="Path to graph.json")
     parser.add_argument("--out", "-o", default=None, help="Output HTML path (default: auto-named)")
     parser.add_argument("--template", "-t", default=None, help="Custom template path")
+    parser.add_argument("--screenshot", "-s", action="store_true", help="Also capture a PNG screenshot (requires playwright)")
     args = parser.parse_args()
 
     # Read input
@@ -79,8 +83,54 @@ def main() -> int:
 
     out_path.write_text(html, encoding="utf-8")
     print(f"Rendered: {out_path}")
-    print(f"  Open in browser to view the visualization.")
+
+    if args.screenshot:
+        shot_path = out_path.with_suffix(".png")
+        _take_screenshot(out_path, shot_path)
+
     return 0
+
+
+def _take_screenshot(html_path: Path, out_path: Path) -> None:
+    """Start a temp HTTP server and use Playwright to screenshot the graph."""
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError:
+        print("Warning: playwright not installed, skipping screenshot. Run: pip install playwright && playwright install chromium", file=sys.stderr)
+        return
+
+    # Pick a free port
+    import socket
+    with socket.socket() as s:
+        s.bind(("", 0))
+        port = s.getsockname()[1]
+
+    # Serve from the HTML file's directory
+    serve_dir = html_path.parent
+
+    class _QuietHandler(SimpleHTTPRequestHandler):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, directory=str(serve_dir), **kw)
+        def log_message(self, *_):
+            pass
+
+    server = HTTPServer(("127.0.0.1", port), _QuietHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    url = f"http://127.0.0.1:{port}/{html_path.name}"
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.goto(url, wait_until="networkidle")
+            # Wait for D3 simulation to settle
+            time.sleep(3)
+            page.screenshot(path=str(out_path), full_page=False)
+            browser.close()
+        print(f"Screenshot: {out_path}")
+    finally:
+        server.shutdown()
 
 
 if __name__ == "__main__":

@@ -1,0 +1,16 @@
+# YMind chat-visualizer-ymind — Python dependencies
+#
+# Install:
+#   pip install -r requirements.txt
+#   playwright install chromium   # only needed for Gemini/Claude share links
+#
+# Python >= 3.9 required.
+
+# fetch-chat.py dependencies
+requests>=2.28
+
+# Only needed if fetching Gemini or Claude share URLs.
+# Skip if you only use ChatGPT links or paste transcripts directly.
+playwright>=1.40
+
+# render-html.py has no external dependencies (stdlib only).

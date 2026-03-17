@@ -65,6 +65,15 @@ def _text_normalize(text: str) -> str:
     return text.strip()
 
 
+def _resolve_url(url: str) -> str:
+    """Follow redirects to get the final URL (handles short links like g.co)."""
+    try:
+        r = requests.head(url, headers=HEADERS, allow_redirects=True, timeout=10)
+        return r.url
+    except Exception:
+        return url
+
+
 def _guess_provider(url: str) -> str:
     host = urlparse(url).netloc.lower()
     if "chatgpt.com" in host:
@@ -73,6 +82,11 @@ def _guess_provider(url: str) -> str:
         return "claude"
     if "gemini.google.com" in host:
         return "gemini"
+    # Short link: follow redirect then re-check
+    if host in ("g.co", "goo.gl") or url.startswith("https://g.co/"):
+        resolved = _resolve_url(url)
+        if resolved != url:
+            return _guess_provider(resolved)
     return "unknown"
 
 
@@ -285,10 +299,16 @@ def main() -> int:
     errors: List[Dict[str, Any]] = []
 
     for url in args.urls:
+        fetch_url = url
         provider = _guess_provider(url)
-        print(f"Fetching [{provider}]: {url} ...")
+        if provider == "unknown":
+            fetch_url = _resolve_url(url)
+            provider = _guess_provider(fetch_url)
+            if fetch_url != url:
+                print(f"Resolved: {url} -> {fetch_url}")
+        print(f"Fetching [{provider}]: {fetch_url} ...")
         try:
-            title, messages = _fetch_provider(provider, url, timeout=args.timeout)
+            title, messages = _fetch_provider(provider, fetch_url, timeout=args.timeout)
             results.append(
                 {
                     "url": url,

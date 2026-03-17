@@ -427,6 +427,7 @@
             sizes: { root: 50, fact: 8, friction: 8, spark: 10, action: 8 },
             yOffsets: { root: 0, fact: -120, friction: 0, spark: 0, action: 120 },
             layout: { turnSpacing: 200, verticalCluster: 100, yStrength: 0.7 }
+            // turnSpacing is overridden dynamically in renderGraph() based on node count
         };
 
         // ============== DOM ==============
@@ -577,6 +578,10 @@
                 .on('mouseout', hideTooltip)
                 .on('click', (e,d) => { e.stopPropagation(); selectNode(d); });
 
+            // --- ADAPTIVE TURN SPACING ---
+            const maxTurnId = Math.max(...visibleData.nodes.filter(n=>n.turn_id).map(n=>n.turn_id), 1);
+            config.layout.turnSpacing = Math.min(180, Math.max(70, (window.innerWidth * 0.68) / (maxTurnId + 1)));
+
             // --- PRE-PROCESS: in-turn index ---
             const turnGroups = {};
             visibleData.nodes.forEach(n => {
@@ -639,12 +644,31 @@
             const root = data.nodes.find(n => n.type==='root');
             if (root) { root.fx=0; root.fy=0; }
 
-            setTimeout(() => {
-                const w=svg.node().clientWidth, h=svg.node().clientHeight;
-                svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity.translate(w*0.25,h/2).scale(0.8));
-            }, 500);
+            // Auto-fit when simulation cools
+            simulation.on('end', () => fitAll(600));
+            // Also fit early so user sees something quickly
+            setTimeout(() => fitAll(750), 1200);
 
             updateRelationLegend(data);
+        }
+
+        // ============== Fit to View ==============
+        function fitAll(duration) {
+            const ns = simulation ? simulation.nodes() : [];
+            if (!ns.length) return;
+            let x0=Infinity, x1=-Infinity, y0=Infinity, y1=-Infinity;
+            ns.forEach(n => {
+                const r = (config.sizes[n.type] || 10) + 20;
+                x0=Math.min(x0,n.x-r); x1=Math.max(x1,n.x+r);
+                y0=Math.min(y0,n.y-r); y1=Math.max(y1,n.y+r);
+            });
+            const w=svg.node().clientWidth, h=svg.node().clientHeight;
+            const pad = 60;
+            const scale = Math.min(0.95, Math.min((w-pad*2)/(x1-x0), (h-pad*2)/(y1-y0)));
+            const tx = w/2 - scale*(x0+x1)/2;
+            const ty = h/2 - scale*(y0+y1)/2;
+            svg.transition().duration(duration||600)
+               .call(zoom.transform, d3.zoomIdentity.translate(tx,ty).scale(scale));
         }
 
         // ============== Helpers ==============
@@ -987,10 +1011,7 @@
         }
 
         // ============== Utils ==============
-        function resetZoom() {
-            const w=svg.node().clientWidth, h=svg.node().clientHeight;
-            svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity.translate(w*0.25,h/2).scale(0.8));
-        }
+        function resetZoom() { fitAll(750); }
 
         function showToast(msg, duration) {
             const el=document.getElementById('statusToast');
