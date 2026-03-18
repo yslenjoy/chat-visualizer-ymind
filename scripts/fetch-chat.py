@@ -119,15 +119,49 @@ def _collect_messages_from_mapping(mapping: Dict[str, Any]) -> List[Dict[str, An
     return messages
 
 
+def _fetch_chatgpt_playwright(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str, Any]]]:
+    """ChatGPT Playwright fallback: render share page headlessly (no cookies saved)."""
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        page = browser.new_page()
+        page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
+        page.wait_for_timeout(8000)
+
+        title = page.title() or None
+
+        messages: List[Dict[str, Any]] = []
+        turns = page.query_selector_all("[data-message-author-role]")
+        for turn in turns:
+            role_attr = turn.get_attribute("data-message-author-role")
+            if role_attr not in ("user", "assistant"):
+                continue
+            text = _text_normalize(turn.inner_text() or "")
+            if text:
+                messages.append({"role": role_attr, "content": text})
+
+        browser.close()
+
+    return title, messages
+
+
 def _fetch_chatgpt(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str, Any]]]:
-    """ChatGPT: /backend-api/share/{id} returns JSON with mapping."""
+    """ChatGPT: try /backend-api/share/{id} first; fall back to Playwright on 403."""
+    import requests as _requests
     share_id = urlparse(url).path.rstrip("/").split("/")[-1]
     api_url = f"https://chatgpt.com/backend-api/share/{share_id}"
-    data = _fetch_json(api_url, timeout)
-    title = data.get("title")
-    mapping = data.get("mapping", {})
-    messages = _collect_messages_from_mapping(mapping)
-    return title, messages
+    try:
+        data = _fetch_json(api_url, timeout)
+        title = data.get("title")
+        mapping = data.get("mapping", {})
+        messages = _collect_messages_from_mapping(mapping)
+        return title, messages
+    except _requests.HTTPError as exc:
+        if exc.response is not None and exc.response.status_code == 403:
+            print("  [ChatGPT] API returned 403, falling back to Playwright ...")
+            return _fetch_chatgpt_playwright(url, timeout)
+        raise
 
 
 # --- Gemini (Playwright) ---

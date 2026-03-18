@@ -22,7 +22,7 @@ python3 scripts/fetch-chat.py "<url>" --out <run_dir>/raw_chat.json
 
 Then read `<run_dir>/raw_chat.json` and use `items[0].messages` as the conversation input.
 
-**ChatGPT 403 fallback**: `fetch-chat.py` calls ChatGPT's private `/backend-api/share/...` endpoint. Without auth cookies it returns 403. If this happens, open the share URL in the browser, select-all and copy the full conversation text, then proceed as plain text input below.
+**ChatGPT 403 fallback**: `fetch-chat.py` calls ChatGPT's private `/backend-api/share/...` endpoint. Without auth cookies it returns 403, and automatically retries with Playwright (headless, no cookies saved). If Playwright also fails (e.g. ChatGPT requires login to view the share page), open the share URL in a logged-in browser, select-all and copy the full conversation text, then proceed as plain text input below.
 
 **If input is plain text**, parse it into structured turns. Look for patterns like:
 - "User:", "Assistant:", "Human:", "AI:", "ChatGPT:", "Claude:" prefixes
@@ -193,7 +193,8 @@ Install Python dependencies before running scripts:
 
 ```bash
 pip install -r requirements.txt
-playwright install chromium   # only needed for Gemini/Claude share URLs
+playwright install chromium   # only needed for Gemini/Claude share URLs, and --screenshot
+chmod +x scripts/run.sh
 ```
 
 `render-html.py` has no external dependencies for basic rendering. It also supports `--screenshot` / `-s` to capture a PNG of the visualization (requires `playwright install chromium`). Note: the script spins up a headless Chromium + waits 3 s for D3 simulation to settle, so it adds ~5 s versus opening the HTML in your browser and screenshotting manually.
