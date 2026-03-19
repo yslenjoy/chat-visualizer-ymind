@@ -65,6 +65,42 @@ Rules:
 - Chinese: natural phrasing
 - Must be recognizable if user sees it
 
+## Markdown Summary Format
+
+After the JSON block, output a human-readable summary:
+
+```
+## Thinking Map: {title}
+
+### Reasoning Timeline
+{For each reasoning shift, show the flow with arrows}
+
+Problem/Context
+  ->
+Hypothesis/Exploration
+  ->
+Turning Point: {what changed}
+  ->
+Insight: {key realization}
+  ->
+Action: {what to do}
+
+### Key Insights
+- {spark nodes, ranked by importance}
+
+### Action Items
+- [ ] {action 1} (priority)
+- [ ] {action 2} (priority)
+
+### Node Summary
+| Type | Count | Key Examples |
+|------|-------|-------------|
+| Fact | N | ... |
+| Friction | N | ... |
+| Spark | N | ... |
+| Action | N | ... |
+```
+
 ## Output JSON Schema
 
 ```json
