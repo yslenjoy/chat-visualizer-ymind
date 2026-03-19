@@ -1,6 +1,6 @@
 ---
 name: chat-visualizer-ymind
-description: Turn AI chat transcripts into structured YMind thinking maps with reasoning nodes, thinking shifts, and action items. Use when a user provides a share URL (ChatGPT/Gemini/Claude) and wants graph extraction, reasoning analysis, JSON output, or HTML visualization.
+description: Turn AI chat transcripts into structured YMind thinking maps with reasoning nodes, thinking shifts, and action items — rendered as an interactive D3.js force graph. Use this skill whenever a user shares a ChatGPT, Gemini, or Claude conversation URL and wants to visualize, analyze, or extract insights from it — even if they just say "help me understand this chat", "what was decided here", or "summarize the key takeaways" without explicitly asking for a graph or visualization.
 ---
 
 # Chat Visualizer - YMind
@@ -39,7 +39,7 @@ conda run -n ymind bash scripts/run.sh render <run_dir>
 
 3. Output Markdown summary (format in `references/graph-schema.md`).
 
-Run dir files: `raw_chat.json`, `graph.json`, `graph.html`, `graph.png`.
+Run dir files: `raw_chat.json`, `graph.json`, `graph.html`, `graph.png`, `meta.json`.
 
 ## Language Rule
 

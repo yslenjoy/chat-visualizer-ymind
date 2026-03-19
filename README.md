@@ -34,12 +34,16 @@ Supported providers: ChatGPT, Gemini, Claude.
 
 ## Output
 
+Results are saved to `~/ymind/` by default. Override with the `YMIND_DIR` environment variable.
+
 ```
-~/workspace/ymind/run_<timestamp>/
-  raw_chat.json    ← fetched conversation
-  graph.json       ← extracted thinking graph
-  graph.html       ← D3.js visualization
-  graph.png        ← screenshot
+~/ymind/
+  20260319-143021_chatgpt/
+    raw_chat.json    ← fetched conversation
+    graph.json       ← extracted thinking graph
+    graph.html       ← D3.js visualization
+    graph.png        ← screenshot
+    meta.json        ← provider, url, title, created_at
 ```
 
 ## Pipeline
