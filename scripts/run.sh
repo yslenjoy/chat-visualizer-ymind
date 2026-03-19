@@ -10,12 +10,13 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-YMIND_DIR="${YMIND_DIR:-$HOME/ymind}"
+YMIND_DIR="${YMIND_DIR:-$HOME/ymind-ws}"
 
 usage() {
     echo "Usage:"
     echo "  run.sh fetch \"<url>\"       Create run dir, fetch chat"
     echo "  run.sh render <run_dir>    Validate graph.json, render HTML + screenshot"
+    echo "  run.sh index               Rebuild $YMIND_DIR/index.json from all run dirs"
     exit 1
 }
 
@@ -87,9 +88,37 @@ with open(meta_path, "w", encoding="utf-8") as f:
 print("meta.json: updated")
 PYEOF
 
+    # Rebuild workspace index
+    bash "$SCRIPT_DIR/run.sh" index
+
     echo ""
     echo "Done: $RUN_DIR"
     ls -1 "$RUN_DIR"
+    ;;
+
+  index)
+    YMIND_DIR="$YMIND_DIR" python3 - <<'PYEOF'
+import json, os
+from pathlib import Path
+
+ymind_dir = Path(os.environ["YMIND_DIR"])
+ymind_dir.mkdir(parents=True, exist_ok=True)
+runs = []
+for meta_path in sorted(ymind_dir.glob("*/meta.json"), reverse=True):
+    try:
+        with open(meta_path, encoding="utf-8") as f:
+            meta = json.load(f)
+        meta["run_dir"] = meta_path.parent.name
+        runs.append(meta)
+    except Exception:
+        pass
+
+index = {"generated_at": __import__("datetime").datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"), "runs": runs}
+out = ymind_dir / "index.json"
+with open(out, "w", encoding="utf-8") as f:
+    json.dump(index, f, ensure_ascii=False, indent=2)
+print(f"index.json: {len(runs)} run(s) → {out}")
+PYEOF
     ;;
 
   *)

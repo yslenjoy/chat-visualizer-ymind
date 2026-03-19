@@ -34,16 +34,17 @@ Supported providers: ChatGPT, Gemini, Claude.
 
 ## Output
 
-Results are saved to `~/ymind/` by default. Override with the `YMIND_DIR` environment variable.
+Results are saved to `~/ymind-ws/` by default (override with `YMIND_DIR`). All runs share this folder — it's your personal thinking map library.
 
 ```
-~/ymind/
+~/ymind-ws/
+  index.json                    ← all runs, auto-updated after each render
   20260319-143021_chatgpt/
-    raw_chat.json    ← fetched conversation
-    graph.json       ← extracted thinking graph
-    graph.html       ← D3.js visualization
-    graph.png        ← screenshot
-    meta.json        ← provider, url, title, created_at
+    raw_chat.json               ← fetched conversation
+    graph.json                  ← extracted thinking graph
+    graph.html                  ← D3.js visualization
+    graph.png                   ← screenshot
+    meta.json                   ← provider, url, title, created_at
 ```
 
 ## Pipeline

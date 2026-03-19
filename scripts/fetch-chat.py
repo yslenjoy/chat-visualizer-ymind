@@ -193,8 +193,10 @@ def _fetch_gemini(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str,
         for turn in turns:
             if not turn:
                 continue
-            # User query
-            query_els = turn.query_selector_all(".query-text-line")
+            # User query (.query-text-line is legacy, .query-text is current)
+            query_els = turn.query_selector_all(".query-text")
+            if not query_els:
+                query_els = turn.query_selector_all(".query-text-line")
             if query_els:
                 user_text = "\n".join(
                     _text_normalize(el.inner_text() or "") for el in query_els
