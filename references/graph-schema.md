@@ -60,7 +60,7 @@ Labels should be extracted from actual words, not invented abstractions:
 | "变现困惑" | "怎么变现能力" |
 
 Rules:
-- 2-5 words
+- Keep short enough to fit on a graph node — a concise phrase, not a sentence
 - English: Title Case
 - Chinese: natural phrasing
 - Must be recognizable if user sees it
@@ -114,7 +114,7 @@ Action: {what to do}
     "nodes": [
       {
         "id": "string - unique identifier (n1, n2, ...) ",
-        "label": "string - 2-5 words from actual conversation",
+        "label": "string - concise phrase from actual conversation",
         "type": "fact | friction | spark | action",
         "rich_summary": "string - 1-2 sentence self-contained description",
         "source": "user | ai",

@@ -5,7 +5,7 @@
 #   run.sh fetch "<url>"        Create run dir, fetch chat → prints RUN_DIR
 #   run.sh render <run_dir>     Validate graph.json, render HTML + screenshot
 #
-# Output directory: $YMIND_DIR (default: ~/ymind)
+# Output directory: $YMIND_DIR (default: ~/ymind-ws)
 
 set -e
 
@@ -66,7 +66,77 @@ PYEOF
         echo "Error: $GRAPH not found" >&2
         exit 1
     fi
-    python3 -c "import json; json.load(open('$GRAPH'))" && echo "graph.json: valid"
+    GRAPH="$GRAPH" python3 - <<'PYEOF'
+import json, re, os, sys
+
+graph_path = os.environ["GRAPH"]
+with open(graph_path, encoding="utf-8") as f:
+    raw = f.read()
+
+# Try parsing first
+try:
+    json.loads(raw)
+    print("graph.json: valid")
+    sys.exit(0)
+except json.JSONDecodeError as e:
+    pass
+
+# Parse failed — scan for unescaped " inside JSON string values
+# Tokenize line by line: inside a string value, a bare " (0x22) that isn't
+# the opening/closing delimiter or an already-escaped \" is the culprit.
+issues = []
+in_string = False
+escape_next = False
+line_num = 1
+col_num = 0
+string_start = None
+
+for i, ch in enumerate(raw):
+    col_num += 1
+    if ch == '\n':
+        line_num += 1
+        col_num = 0
+
+    if escape_next:
+        escape_next = False
+        continue
+
+    if ch == '\\' and in_string:
+        escape_next = True
+        continue
+
+    if ch == '"':
+        if not in_string:
+            in_string = True
+            string_start = (line_num, col_num)
+        else:
+            in_string = False
+
+# If no issues found via scan, just show the raw JSON error
+if not issues:
+    # Re-raise with context
+    lines = raw.splitlines()
+    try:
+        json.loads(raw)
+    except json.JSONDecodeError as e:
+        ctx_line = lines[e.lineno - 1] if e.lineno <= len(lines) else ""
+        pointer = ' ' * (e.colno - 1) + '^'
+        print(f"graph.json: INVALID — {e.msg}", file=sys.stderr)
+        print(f"  line {e.lineno}, col {e.colno}:", file=sys.stderr)
+        print(f"  {ctx_line}", file=sys.stderr)
+        print(f"  {pointer}", file=sys.stderr)
+        # Check if a bare " appears near the error position in the source line
+        near = ctx_line[max(0, e.colno-15):e.colno+5]
+        if '"' in near:
+            print(f'  Hint: bare " detected near error — replace with 「」 inside string values.', file=sys.stderr)
+    sys.exit(1)
+
+print(f"graph.json: INVALID — found {len(issues)} unescaped quote(s) inside string value(s)", file=sys.stderr)
+print("Fix: replace bare \" with 「」 in the affected fields.", file=sys.stderr)
+for line_no, col_no, ctx in issues:
+    print(f"  line {line_no}, col {col_no}: ...{ctx}...", file=sys.stderr)
+sys.exit(1)
+PYEOF
     python3 "$SCRIPT_DIR/render-html.py" "$GRAPH" --out "$RUN_DIR/graph.html" --screenshot
 
     # Update meta.json with title extracted from graph.json

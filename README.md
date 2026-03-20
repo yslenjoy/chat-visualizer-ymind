@@ -59,9 +59,14 @@ Share URL
 
 ## Dependencies
 
+Requires Python 3.10+.
+
+**Minimal** (paste text only — no extra install needed):
+`render-html.py` uses stdlib only; the paste path skips `fetch-chat.py` entirely.
+
+**Full** (auto-fetch URLs + screenshot):
 ```bash
-pip install -r requirements.txt
-playwright install chromium
+pip install requests playwright && playwright install chromium
 ```
 
 <!-- TODO: 发布前需要解决 Python 环境方案（当前开发用 conda env ymind，用户侧需要替换为 venv 或纯 pip） -->
