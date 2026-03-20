@@ -29,8 +29,8 @@ ChatGPT 403: script retries with Playwright headed mode. If still fails, fall ba
 
 User opens the conversation in browser → Ctrl+A → Ctrl+C → pastes into chat. No share link needed — any conversation page works.
 
-When handling pasted text:
-1. Create run_dir manually:
+When handling pasted text or a local JSON file:
+1. Create run_dir manually. **The suffix must always be `_paste` — do not use the filename, title, or any other label:**
    ```bash
    YMIND_DIR="${YMIND_DIR:-$HOME/ymind-ws}"
    RUN_DIR="$YMIND_DIR/$(date +%Y%m%d-%H%M%S)_paste"
@@ -84,11 +84,21 @@ Critical rules (non-obvious):
 ```bash
 conda run -n ymind bash scripts/run.sh render <run_dir>
 # validates JSON, renders graph.html + graph.png (screenshot, requires Playwright)
+# then rebuilds ~/ymind-ws/index.json and ~/ymind-ws/index.html automatically
 ```
 
 3. Output Markdown summary (format in `references/graph-schema.md`).
 
 Run dir files: `raw_chat.json`, `graph.json`, `graph.html`, `graph.png` (requires Playwright), `meta.json`.
+
+Workspace files (auto-updated after every render):
+- `~/ymind-ws/index.json` — machine-readable session registry
+- `~/ymind-ws/index.html` — visual timeline index, opens each session's graph.html
+
+To rebuild the index manually at any time:
+```bash
+conda run -n ymind bash scripts/run.sh index
+```
 
 ## Language Rule
 

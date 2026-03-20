@@ -189,6 +189,7 @@ with open(out, "w", encoding="utf-8") as f:
     json.dump(index, f, ensure_ascii=False, indent=2)
 print(f"index.json: {len(runs)} run(s) → {out}")
 PYEOF
+    python3 "$SCRIPT_DIR/render-index.py" --ws "$YMIND_DIR"
     ;;
 
   *)
