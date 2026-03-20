@@ -3,9 +3,10 @@
 Fetch shared chat content from chatbot share links.
 
 Supported:
-- ChatGPT: https://chatgpt.com/share/...  (JSON API)
-- Gemini:  https://gemini.google.com/share/...  (Playwright)
-- Claude:  https://claude.ai/share/...  (Playwright, headed mode for Cloudflare)
+- ChatGPT:  https://chatgpt.com/share/...        (JSON API, Playwright fallback on 403)
+- Gemini:   https://gemini.google.com/share/...  (Playwright)
+- Claude:   https://claude.ai/share/...          (Playwright, headed mode for Cloudflare)
+- DeepSeek: https://chat.deepseek.com/share/...  (Playwright, __NEXT_DATA__ extraction)
 
 Example:
   python3 fetch-chat.py "https://chatgpt.com/share/..." --out raw_chat.json
@@ -75,6 +76,8 @@ def _guess_provider(url: str) -> str:
         return "claude"
     if "gemini.google.com" in host:
         return "gemini"
+    if "chat.deepseek.com" in host:
+        return "deepseek"
     # Short link: follow redirect then re-check
     if host in ("g.co", "goo.gl") or url.startswith("https://g.co/"):
         resolved = _resolve_url(url)
@@ -302,6 +305,101 @@ def _fetch_claude(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str,
     return title, messages
 
 
+# --- DeepSeek (Playwright) ---
+
+def _fetch_deepseek(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str, Any]]]:
+    """DeepSeek: render share page with Playwright headed mode (CloudFront blocks headless)."""
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser, page = _launch_headed_browser(p, timeout * 1000)
+        page.goto(url, wait_until="domcontentloaded", timeout=timeout * 1000)
+        page.wait_for_timeout(8000)
+
+        title = page.title() or None
+
+        messages: List[Dict[str, Any]] = []
+
+        # Strategy 1: extract from embedded __NEXT_DATA__ JSON (most reliable for Next.js apps)
+        next_data_text: Optional[str] = page.evaluate(
+            "() => { const el = document.getElementById('__NEXT_DATA__'); return el ? el.textContent : null; }"
+        )
+        if next_data_text:
+            try:
+                data = json.loads(next_data_text)
+                page_props = data.get("props", {}).get("pageProps", {})
+                # DeepSeek may nest conversation under different keys
+                conversation = (
+                    page_props.get("conversation")
+                    or page_props.get("chat_session")
+                    or page_props.get("session")
+                )
+                raw_messages = None
+                if isinstance(conversation, dict):
+                    raw_messages = (
+                        conversation.get("messages")
+                        or conversation.get("chat_messages")
+                    )
+                elif isinstance(page_props, dict):
+                    raw_messages = (
+                        page_props.get("messages")
+                        or page_props.get("chat_messages")
+                    )
+                if raw_messages:
+                    for msg in raw_messages:
+                        role = msg.get("role") or msg.get("author_type") or ""
+                        if role in ("user", "human"):
+                            role = "user"
+                        elif role in ("assistant", "bot", "ai"):
+                            role = "assistant"
+                        else:
+                            continue
+                        content = msg.get("content") or msg.get("text") or ""
+                        if isinstance(content, list):
+                            content = "\n".join(
+                                c.get("text", "") if isinstance(c, dict) else str(c)
+                                for c in content
+                            )
+                        content = _text_normalize(str(content))
+                        if content:
+                            messages.append({"role": role, "content": content})
+            except (json.JSONDecodeError, KeyError, TypeError):
+                pass
+
+        # Strategy 2: DOM scraping
+        # DeepSeek share page structure:
+        #   User turn:      .ds-message.d29f3d7d  →  child .fbb737a4 holds text
+        #   Assistant turn: .ds-message (no d29f3d7d)  →  .ds-markdown holds response
+        if not messages:
+            turn_els = page.query_selector_all(".ds-message")
+            for el in turn_els:
+                cls = el.get_attribute("class") or ""
+                if "d29f3d7d" in cls:
+                    # User message
+                    text_el = el.query_selector(".fbb737a4")
+                    text = _text_normalize((text_el.inner_text() if text_el else el.inner_text()) or "")
+                    if text:
+                        messages.append({"role": "user", "content": text})
+                else:
+                    # Assistant message — extract .ds-markdown outside the thinking block
+                    # (._74c0879 is the chain-of-thought collapsible; skip its inner ds-markdown)
+                    texts: List[str] = el.evaluate(
+                        """el => {
+                            const thinking = el.querySelector('._74c0879');
+                            return [...el.querySelectorAll('.ds-markdown')]
+                                .filter(md => !thinking || !thinking.contains(md))
+                                .map(md => md.innerText || '');
+                        }"""
+                    )
+                    text = "\n\n".join(_text_normalize(t) for t in texts if t).strip()
+                    if text:
+                        messages.append({"role": "assistant", "content": text})
+
+        browser.close()
+
+    return title, messages
+
+
 # --- Dispatch ---
 
 def _fetch_provider(provider: str, url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str, Any]]]:
@@ -311,6 +409,8 @@ def _fetch_provider(provider: str, url: str, timeout: int) -> Tuple[Optional[str
         return _fetch_gemini(url, timeout)
     if provider == "claude":
         return _fetch_claude(url, timeout)
+    if provider == "deepseek":
+        return _fetch_deepseek(url, timeout)
     raise ValueError(f"Unknown provider: {provider}")
 
 

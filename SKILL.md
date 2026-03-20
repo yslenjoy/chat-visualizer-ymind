@@ -1,6 +1,6 @@
 ---
 name: chat-visualizer-ymind
-description: Turn AI chat transcripts into structured YMind thinking maps with reasoning nodes, thinking shifts, and action items — rendered as an interactive D3.js force graph. Use this skill whenever a user shares a ChatGPT, Gemini, or Claude conversation URL and wants to visualize, analyze, or extract insights from it — even if they just say "help me understand this chat", "what was decided here", or "summarize the key takeaways" without explicitly asking for a graph or visualization.
+description: Turn AI chat transcripts into structured YMind thinking maps with reasoning nodes, thinking shifts, and action items — rendered as an interactive D3.js force graph. Use this skill whenever a user shares a ChatGPT, Gemini, Claude, or DeepSeek conversation URL and wants to visualize, analyze, or extract insights from it — even if they just say "help me understand this chat", "what was decided here", or "summarize the key takeaways" without explicitly asking for a graph or visualization.
 ---
 
 # Chat Visualizer - YMind
@@ -61,6 +61,7 @@ Users often give the wrong link type. Correct them if needed:
 | ChatGPT | `chatgpt.com/share/xxx` | `chatgpt.com/c/xxx` (private chat URL) |
 | Claude | `claude.ai/share/xxx` | `claude.ai/chat/xxx` (private chat URL) |
 | Gemini | `gemini.google.com/share/xxx` | `gemini.google.com/app/xxx` (app URL) |
+| DeepSeek | `chat.deepseek.com/share/xxx` | `chat.deepseek.com/a/xxx` (private chat URL) |
 
 Note: `g.co/gemini/share/...` short links work — script auto-resolves them.
 
