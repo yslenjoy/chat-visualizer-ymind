@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -391,6 +391,23 @@
 </div>
 
 <script>
+// ── Language ──
+const isZh = navigator.language.startsWith('zh');
+document.documentElement.lang = isZh ? 'zh-CN' : 'en';
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const LOCALE = isZh ? 'zh-CN' : 'en-US';
+const i18n = {
+    subtitle:    isZh ? s => `最近更新：${s}` : s => `Last updated ${s}`,
+    records:     isZh ? n => `${n} 条记录`    : n => `${n} sessions`,
+    daySpan:     isZh ? n => `${n} 天跨度`    : n => `${n} days`,
+    topProvider: isZh ? l => `最多 ${l}`      : l => `Most: ${l}`,
+    filterAll:   isZh ? 'All'                 : 'All',
+    untitled:    isZh ? '— 未命名对话 —'      : '— Untitled —',
+    openGraph:   isZh ? '打开思维图'           : 'Open graph',
+    empty:       isZh ? '还没有分析记录'       : 'No sessions yet',
+    countSuffix: isZh ? n => `${n} 条`        : n => `${n}`,
+};
+
 // ── Provider config ──
 const PROVIDERS = {
     chatgpt:  { label: 'ChatGPT',  rgb: '16,163,127',   hex: '#10a37f' },
@@ -412,13 +429,13 @@ function parseDate(str) {
     return new Date(str.endsWith('Z') || str.includes('+') ? str : str + 'Z');
 }
 function formatDateGroup(d) {
-    return d.toLocaleDateString('zh-CN', {
-        year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Shanghai'
+    return d.toLocaleDateString(LOCALE, {
+        year: 'numeric', month: 'long', day: 'numeric', timeZone: TZ
     });
 }
 function formatTime(d) {
-    return d.toLocaleTimeString('zh-CN', {
-        hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Shanghai'
+    return d.toLocaleTimeString(LOCALE, {
+        hour: '2-digit', minute: '2-digit', timeZone: TZ
     });
 }
 
@@ -438,15 +455,9 @@ function buildStats(runs) {
     const daysDiff = Math.round((last - first) / 86400000) + 1;
 
     return `
-        <div class="stat-pill active">
-            <span class="val">${total}</span> 条记录
-        </div>
-        <div class="stat-pill">
-            <span class="val">${daysDiff}</span> 天跨度
-        </div>
-        <div class="stat-pill">
-            最多 <span class="val">${getProvider(topProvider?.[0]).label}</span>
-        </div>
+        <div class="stat-pill active">${i18n.records(`<span class="val">${total}</span>`)}</div>
+        <div class="stat-pill">${i18n.daySpan(`<span class="val">${daysDiff}</span>`)}</div>
+        <div class="stat-pill">${i18n.topProvider(`<span class="val">${getProvider(topProvider?.[0]).label}</span>`)}</div>
     `;
 }
 
@@ -457,7 +468,7 @@ function buildFilters(runs, onFilter) {
 
     const allTab = document.createElement('button');
     allTab.className = 'filter-tab active';
-    allTab.textContent = 'All';
+    allTab.textContent = i18n.filterAll;
     allTab.style.setProperty('--provider-color', 'var(--aura-cyan)');
     allTab.style.setProperty('--provider-rgb', '0,240,255');
     allTab.addEventListener('click', () => {
@@ -523,7 +534,7 @@ function buildCard(run) {
         </div>
         <div class="card-body">
             <div class="card-top">
-                <div class="card-title ${hasTitle ? '' : 'untitled'}">${hasTitle ? title : '— 未命名对话 —'}</div>
+                <div class="card-title ${hasTitle ? '' : 'untitled'}">${hasTitle ? title : i18n.untitled}</div>
                 <div class="card-meta">
                     <span class="provider-badge">
                         <span class="provider-dot"></span>
@@ -534,7 +545,7 @@ function buildCard(run) {
             </div>
             <div class="card-footer">
                 <span class="open-btn">
-                    打开思维图
+                    ${i18n.openGraph}
                     <svg class="open-arrow" width="12" height="12" viewBox="0 0 12 12" fill="none">
                         <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
@@ -554,7 +565,7 @@ function buildTimeline(runs) {
     if (!runs || runs.length === 0) {
         timeline.innerHTML = `<div class="empty-state">
             <div class="emoji">🌀</div>
-            还没有分析记录
+            ${i18n.empty}
         </div>`;
         return;
     }
@@ -581,7 +592,7 @@ function buildTimeline(runs) {
         label.innerHTML = `
             <div class="date-dot"></div>
             <span class="date-text">${dateStr}</span>
-            <span class="date-count">${groupRuns.length} 条</span>
+            <span class="date-count">${i18n.countSuffix(groupRuns.length)}</span>
         `;
         group.appendChild(label);
 
@@ -619,7 +630,7 @@ function applyFilter(providerKey) {
         ? formatDateGroup(parseDate(runs[0].created_at))
         : null;
     if (last) {
-        document.getElementById('subtitle').textContent = `最近更新：${last}`;
+        document.getElementById('subtitle').textContent = i18n.subtitle(last);
     }
 
     // Timeline
