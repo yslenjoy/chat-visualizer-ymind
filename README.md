@@ -1,6 +1,8 @@
+**English** | [中文](README-zh.md)
+
 # chat-visualizer-ymind
 
-Turn any AI chat conversation into a structured thinking map — extract the reasoning behind decisions, surface friction points, and trace how ideas evolved.
+An AI agent skill for OpenClaw, Claude Code, and Codex. Visualize any AI chat conversation into a structured thinking map — extract the reasoning behind decisions, surface friction points, and trace how ideas evolved.
 
 **Philosophy:** Chat is linear. Thinking isn't. AI conversations are dense with insight — but insights scatter across lengthy threads. You forget key breakthroughs, repeat conversations unknowingly, miss the connections. This skill externalizes your thinking: every conversation becomes a navigable graph of what you actually figured out.
 
@@ -12,9 +14,7 @@ Share a conversation URL → get an interactive force graph with:
 - **Action items** — extracted, prioritized, and grouped by friction context
 - **D3.js visualization** — dark-mode interactive graph, shareable as a single HTML file
 
-## Screenshots
-
-> *(coming soon)*
+![Titanic and the Utilitarian Filter](assets/graph-demo.png)
 
 ## Quick Start
 
@@ -97,8 +97,7 @@ Input
 
 Requires Python 3.10+.
 
-**Minimal** (paste text only — no extra install needed):
-`render-html.py` uses stdlib only; the paste path skips `fetch-chat.py` entirely.
+**Minimal** (paste mode):  — no install needed.
 
 **Full** (auto-fetch URLs + screenshot):
 ```bash
