@@ -26,7 +26,7 @@
 3. agent 自动抓取对话、提取思维图、生成 HTML 文件
 4. 打开 `graph.html` —— 浏览节点、追踪行动路径、导出洞察
 
-**自动抓取**（分享链接 → agent 自动获取内容）：ChatGPT、Gemini、Claude、DeepSeek。
+**自动抓取**（分享链接 → agent 自动获取内容）：ChatGPT、Gemini、Claude、DeepSeek、豆包。
 
 **粘贴模式**（没有分享链接？Ctrl+A → 复制 → 粘贴给 agent）：支持任何 AI 工具，不需要链接。
 

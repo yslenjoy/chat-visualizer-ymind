@@ -7,6 +7,7 @@ Supported:
 - Gemini:   https://gemini.google.com/share/...  (Playwright)
 - Claude:   https://claude.ai/share/...          (Playwright, headed mode for Cloudflare)
 - DeepSeek: https://chat.deepseek.com/share/...  (Playwright, __NEXT_DATA__ extraction)
+- Doubao:   https://www.doubao.com/thread/...    (JSON API, no Playwright needed)
 
 Example:
   python3 fetch-chat.py "https://chatgpt.com/share/..." --out raw_chat.json
@@ -78,6 +79,8 @@ def _guess_provider(url: str) -> str:
         return "gemini"
     if "chat.deepseek.com" in host:
         return "deepseek"
+    if "doubao.com" in host:
+        return "doubao"
     # Short link: follow redirect then re-check
     if host in ("g.co", "goo.gl") or url.startswith("https://g.co/"):
         resolved = _resolve_url(url)
@@ -400,6 +403,91 @@ def _fetch_deepseek(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[st
     return title, messages
 
 
+# --- Doubao ---
+
+def _extract_doubao_text(content_raw: str, is_user: bool) -> str:
+    """Extract plain text from a Doubao message content JSON string."""
+    try:
+        blocks = json.loads(content_raw)
+    except (json.JSONDecodeError, TypeError):
+        return ""
+    parts: List[str] = []
+    for block in blocks:
+        if block.get("block_type") != 10000:
+            continue  # skip block_type 10040 (thinking metadata) and others
+        c = block.get("content", {})
+        if is_user:
+            # User messages: content is a dict with text_block.text
+            if isinstance(c, dict):
+                text = c.get("text_block", {}).get("text", "")
+                if text:
+                    parts.append(text)
+        else:
+            # Assistant messages: content is a JSON string
+            if isinstance(c, str):
+                try:
+                    inner = json.loads(c)
+                except json.JSONDecodeError:
+                    continue
+            elif isinstance(c, dict):
+                inner = c
+            else:
+                continue
+            # Skip thinking blocks (they carry icon_url for the Deep Think icon)
+            if "icon_url" in inner:
+                continue
+            text = inner.get("text", "")
+            if text:
+                parts.append(text)
+    return _text_normalize("\n\n".join(parts))
+
+
+def _fetch_doubao(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str, Any]]]:
+    """Doubao: call the share snapshot API directly (no Playwright needed)."""
+    share_id = urlparse(url).path.rstrip("/").split("/")[-1]
+    api_url = "https://www.doubao.com/samantha/thread/share/snapshot/get"
+    params = {
+        "version_code": "20800",
+        "language": "zh",
+        "device_platform": "web",
+        "aid": "497858",
+        "real_aid": "497858",
+        "pkg_type": "release_version",
+        "device_id": "",
+        "pc_version": "3.11.1",
+        "samantha_web": "1",
+        "use-olympus-account": "1",
+    }
+    headers = {
+        **HEADERS,
+        "Content-Type": "application/json",
+        "Referer": url,
+        "Origin": "https://www.doubao.com",
+    }
+    resp = requests.post(api_url, params=params, json={"share_id": share_id, "need_bot": False},
+                         headers=headers, timeout=timeout)
+    resp.raise_for_status()
+    data = resp.json()
+    if data.get("code") != 0:
+        raise ValueError(f"Doubao API error: {data.get('msg')}")
+
+    share_info = data["data"]["share_info"]
+    title: Optional[str] = share_info.get("share_name") or None
+    raw_messages = data["data"]["message_snapshot"]["message_list"]
+
+    messages: List[Dict[str, Any]] = []
+    for msg in raw_messages:
+        is_user = msg.get("reply_id") == "0"
+        text = _extract_doubao_text(msg.get("content", ""), is_user)
+        if text:
+            messages.append({
+                "role": "user" if is_user else "assistant",
+                "content": text,
+            })
+
+    return title, messages
+
+
 # --- Dispatch ---
 
 def _fetch_provider(provider: str, url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str, Any]]]:
@@ -411,6 +499,8 @@ def _fetch_provider(provider: str, url: str, timeout: int) -> Tuple[Optional[str
         return _fetch_claude(url, timeout)
     if provider == "deepseek":
         return _fetch_deepseek(url, timeout)
+    if provider == "doubao":
+        return _fetch_doubao(url, timeout)
     raise ValueError(f"Unknown provider: {provider}")
 
 

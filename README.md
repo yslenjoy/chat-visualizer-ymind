@@ -26,7 +26,7 @@ Share a conversation URL → get an interactive force graph with:
 3. The agent fetches the conversation, extracts the thinking graph, and renders an HTML file
 4. Open `graph.html` — explore nodes, trace action paths, export insights
 
-**Auto-fetch** (share link → agent fetches automatically): ChatGPT, Gemini, Claude, DeepSeek.
+**Auto-fetch** (share link → agent fetches automatically): ChatGPT, Gemini, Claude, DeepSeek, Doubao.
 
 **Paste** (no share link? Ctrl+A → copy → paste to your agent): works with any AI tool — no URL needed.
 

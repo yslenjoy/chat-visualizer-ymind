@@ -25,6 +25,8 @@ _detect_provider() {
       *chatgpt.com*)        echo "chatgpt" ;;
       *gemini.google.com*)  echo "gemini" ;;
       *claude.ai*)          echo "claude" ;;
+      *deepseek.com*)       echo "deepseek" ;;
+      *doubao.com*)         echo "doubao" ;;
       *)                    echo "chat" ;;
     esac
 }

@@ -62,6 +62,7 @@ Users often give the wrong link type. Correct them if needed:
 | Claude | `claude.ai/share/xxx` | `claude.ai/chat/xxx` (private chat URL) |
 | Gemini | `gemini.google.com/share/xxx` | `gemini.google.com/app/xxx` (app URL) |
 | DeepSeek | `chat.deepseek.com/share/xxx` | `chat.deepseek.com/a/xxx` (private chat URL) |
+| Doubao | `www.doubao.com/thread/xxx` | `www.doubao.com/chat/xxx` (private chat URL) |
 
 Note: `g.co/gemini/share/...` short links work — script auto-resolves them.
 
@@ -79,6 +80,9 @@ Critical rules (non-obvious):
 ## Output
 
 1. Write `<run_dir>/graph.json`
+
+   Before proceeding: verify `graph.json` exists and contains at least one node. If extraction failed or produced an empty graph, delete `<run_dir>` entirely and stop — do not render, do not update the index.
+
 2. Render (path consistency rule: index root is auto-locked to `dirname(<run_dir>)`, so graph and index always stay in the same workspace tree):
 
 ```bash
@@ -88,6 +92,7 @@ bash scripts/run.sh render <run_dir>
 ```
 
 3. Output Markdown summary (format in `references/graph-schema.md`).
+4. If running as a bot with chat output capability, send the graph image — see **Bot Send** below.
 
 Run dir files: `raw_chat.json`, `graph.json`, `graph.html`, `graph.png` (requires Playwright), `meta.json`.
 
@@ -99,6 +104,14 @@ To rebuild the index manually at any time:
 ```bash
 bash scripts/run.sh index
 ```
+
+## Bot Send
+
+If `message` tool is available and `graph.png` was generated, send the graph image (works on OpenClaw, Kimi Claw, and similar — detect by tool availability):
+
+- If `graph.png` is outside the bot's media allow-roots, copy it to `<workspace>/.outbox/` first, then send the copied path.
+- Send via `message` tool using the `filePath` (or `media`) field — not as plain text, not as base64.
+- If send fails, skip silently and continue with the HTML link and Markdown summary.
 
 ## Language Rule
 
