@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;500;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
     <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -342,6 +343,23 @@
             border: 1px solid rgba(255,255,255,0.1);
         }
         .action-btn.secondary:hover { background: rgba(255,255,255,0.2); }
+        .action-btn.icon-btn {
+            width: 28px; height: 28px; padding: 0;
+            background: transparent; color: #4b5563;
+            border: none; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            transition: color 0.2s;
+        }
+        .action-btn.icon-btn:hover { color: #9ca3af; }
+
+        /* Export scroll container */
+        #exportContainer { position: fixed; left: -9999px; top: 0; }
+        .manifesto-scroll {
+            background: #050608; padding: 40px;
+            display: flex; flex-direction: column; gap: 0; width: 520px;
+        }
+        .scroll-header { text-align: center; margin-bottom: 30px; }
+        .scroll-footer { text-align: center; margin-top: 20px; font-size: 11px; color: #374151; font-family: 'Inter', sans-serif; }
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -411,6 +429,9 @@
         <div id="statusToast" class="status-toast"></div>
     </main>
 
+    <!-- Hidden export container -->
+    <div id="exportContainer"></div>
+
     <!-- Action Card Modal -->
     <div id="manifestoModal" class="modal-overlay" style="display:none;">
         <div class="modal-backdrop" onclick="closeActionCards()"></div>
@@ -422,7 +443,12 @@
             <div class="cards-container" id="cardsContainer"></div>
             <div class="cards-indicator" id="cardsIndicator"></div>
             <div class="modal-actions">
-                <button class="action-btn secondary" onclick="exportJSON()">Export JSON</button>
+                <button class="action-btn secondary" onclick="exportImage()">Save Image</button>
+                <button class="action-btn icon-btn" id="btnCopyText" onclick="copyCardText()" title="Copy">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+                    </svg>
+                </button>
                 <button class="action-btn secondary" onclick="closeActionCards()">Close</button>
             </div>
         </div>
@@ -442,6 +468,94 @@
         let editingNode = null;
         let dirty = false;
         let focusedActionId = null;
+        let currentCardData = null;
+
+        // ============== i18n ==============
+        const i18n = {
+            en: {
+                nodeTypes: 'Node Types',
+                relations: 'Relations',
+                nodeLabels: { fact: 'Fact', friction: 'Friction', spark: 'Spark', action: 'Action' },
+                relationLabels: { causes: 'Causes', resolves: 'Resolves', leads_to: 'Leads to', opposes: 'Opposes' },
+                timeline: '⏱ Timeline', timelineTitle: 'Timeline view — nodes spread by conversation turn',
+                structure: '◈ Structure', structureTitle: 'Structure view — nodes grouped by type',
+                clickToSelect: 'Click to select',
+                actionCards: 'Action Cards',
+                actionsFrom: (n, m) => `${n} actions from ${m} insights`,
+                otherInsights: 'Other Insights',
+                otherInsightsDesc: 'Actions without specific friction context',
+                noActions: 'No actions found',
+                labelUpdated: 'Label updated',
+                jsonExported: 'JSON exported',
+                htmlSaved: 'HTML saved',
+                exportCards: 'Save Image',
+                copyText: 'Copy',
+                copied: 'Copied',
+                close: 'Close',
+            },
+            zh: {
+                nodeTypes: '节点类型',
+                relations: '关系',
+                nodeLabels: { fact: '事实', friction: '阻力', spark: '灵感', action: '行动' },
+                relationLabels: { causes: '导致', resolves: '化解', leads_to: '推进', opposes: '对立' },
+                timeline: '⏱ 时间线', timelineTitle: '时间线视图 — 按对话轮次展开',
+                structure: '◈ 结构', structureTitle: '结构视图 — 按节点类型分组',
+                clickToSelect: '点击选中',
+                actionCards: '行动卡片',
+                actionsFrom: (n, m) => `${m} 个主题，共 ${n} 条行动`,
+                otherInsights: '其他洞见',
+                otherInsightsDesc: '未关联具体阻力的行动',
+                noActions: '未发现行动节点',
+                labelUpdated: '标签已更新',
+                jsonExported: 'JSON 已导出',
+                htmlSaved: 'HTML 已保存',
+                exportCards: '保存图片',
+                copyText: '复制',
+                copied: '已复制',
+                close: '关闭',
+            }
+        };
+
+        let lang = 'en';
+        let t = i18n.en;
+
+        function detectLang(nodes) {
+            const allLabels = nodes.map(n => n.label || '').join('');
+            const chCount = (allLabels.match(/[\u4e00-\u9fa5]/g) || []).length;
+            return allLabels.length > 0 && chCount / allLabels.length > 0.15 ? 'zh' : 'en';
+        }
+
+        function applyLang() {
+            // Legend: node types title + labels
+            const legendTitles = document.querySelectorAll('.legend-title');
+            if (legendTitles[0]) legendTitles[0].textContent = t.nodeTypes;
+            const legendItems = document.querySelectorAll('.legend-item');
+            const nodeTypeOrder = ['fact', 'friction', 'spark', 'action'];
+            legendItems.forEach((item, i) => {
+                const key = nodeTypeOrder[i];
+                if (!key) return;
+                const shape = item.querySelector('.legend-dot, .legend-diamond, .legend-circle-hollow');
+                item.innerHTML = '';
+                if (shape) item.appendChild(shape);
+                item.appendChild(document.createTextNode(t.nodeLabels[key]));
+            });
+            // View toggle buttons
+            const btnTl = document.getElementById('btnTimeline');
+            const btnSt = document.getElementById('btnStructure');
+            if (btnTl) { btnTl.textContent = t.timeline; btnTl.title = t.timelineTitle; }
+            if (btnSt) { btnSt.textContent = t.structure; btnSt.title = t.structureTitle; }
+            // Tooltip hint
+            const hint = document.querySelector('.tooltip-hint');
+            if (hint) hint.textContent = t.clickToSelect;
+            // Modal title + buttons
+            const modalTitle = document.querySelector('.modal-title');
+            if (modalTitle) modalTitle.textContent = t.actionCards;
+            const actionBtns = document.querySelectorAll('.modal-actions .action-btn.secondary');
+            if (actionBtns[0]) actionBtns[0].textContent = t.exportCards;
+            if (actionBtns[1]) actionBtns[1].textContent = t.close;
+            const copyBtn = document.getElementById('btnCopyText');
+            if (copyBtn) copyBtn.title = t.copyText;
+        }
 
         // ============== Config ==============
         const config = {
@@ -483,6 +597,9 @@
                 document.title = 'YMind \u2014 ' + title;
             }
 
+            lang = detectLang(nodes);
+            t = i18n[lang];
+            applyLang();
             updateActionBadge();
             renderGraph(graphData);
         }
@@ -774,15 +891,14 @@
         }
 
         // ============== Legend ==============
-        const relationLabels = { causes:'Causes', resolves:'Resolves', leads_to:'Leads to', opposes:'Opposes' };
         function updateRelationLegend(data) {
             const el=document.getElementById('relationItems'); if(!el) return;
             const types=new Set();
             data.links.forEach(l => { if(l.relation_type&&l.relation_type!=='parent') types.add(l.relation_type); });
             if (types.size===0) { el.style.display='none'; return; }
             el.style.display='block';
-            el.innerHTML='<div class="legend-title" style="margin-top:4px;">Relations</div>';
-            types.forEach(t => { el.innerHTML+='<div class="relation-item"><span class="relation-line '+t+'"></span>'+(relationLabels[t]||t)+'</div>'; });
+            el.innerHTML='<div class="legend-title" style="margin-top:4px;">'+t.relations+'</div>';
+            types.forEach(type => { el.innerHTML+='<div class="relation-item"><span class="relation-line '+type+'"></span>'+(t.relationLabels[type]||type)+'</div>'; });
         }
 
         // ============== Drag ==============
@@ -825,7 +941,7 @@
                 dirty=true;
                 document.getElementById('btnSave').classList.remove('hidden');
                 renderGraph(graphData, true);
-                showToast('Label updated');
+                showToast(t.labelUpdated);
             }
             cancelEdit();
         }
@@ -946,7 +1062,7 @@
         function openActionCards() {
             if (!graphData) return;
             const actions = graphData.nodes.filter(n=>n.type==='action').sort((a,b)=>(a.turn_id||0)-(b.turn_id||0));
-            if (actions.length===0) { showToast('No actions found'); return; }
+            if (actions.length===0) { showToast(t.noActions); return; }
 
             const { groups, ungrouped } = groupActionsByFriction(actions);
             const cardData = [];
@@ -954,10 +1070,11 @@
                 cardData.push({ title: friction.label, subtitle: friction.rich_summary||'', actions: fa });
             });
             if (ungrouped.length>0) {
-                cardData.push({ title: 'Other Insights', subtitle: 'Actions without specific friction context', actions: ungrouped });
+                cardData.push({ title: t.otherInsights, subtitle: t.otherInsightsDesc, actions: ungrouped });
             }
 
-            document.getElementById('modalSubtitle').textContent = actions.length+' actions from '+cardData.length+' insights';
+            currentCardData = cardData;
+            document.getElementById('modalSubtitle').textContent = t.actionsFrom(actions.length, cardData.length);
 
             const container = document.getElementById('cardsContainer');
             const now = new Date();
@@ -1024,6 +1141,74 @@
         }
 
         // ============== Export / Save ==============
+        async function exportImage() {
+            if (!currentCardData || currentCardData.length === 0) return;
+            const title = document.getElementById('graphTitle').textContent || 'YMind';
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('zh-CN', { year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\//g,'-');
+
+            const renderCardHtml = (card) => `
+                <div class="manifesto-card" style="width:100%;margin-bottom:20px;box-shadow:none;border:1px solid rgba(255,255,255,0.1);min-height:auto;max-height:none;">
+                    <div class="card-header" style="margin-bottom:12px;">
+                        <h2 class="card-title" style="font-size:16px;">${escapeHtml(card.title)}</h2>
+                    </div>
+                    <div class="card-divider" style="margin-bottom:12px;"></div>
+                    <div class="card-content" style="flex:none;overflow:visible;">
+                        ${card.actions.map(a => `
+                            <div class="card-item">
+                                <span class="card-bullet">✦</span>
+                                <span>${escapeHtml(a.rich_summary || a.label)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>`;
+
+            const container = document.getElementById('exportContainer');
+            container.innerHTML = `
+                <div class="manifesto-scroll">
+                    <div class="scroll-header">
+                        <div style="font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:6px;">${escapeHtml(title)}</div>
+                        <div style="font-family:'Inter',sans-serif;font-size:11px;color:#00F0FF;">${escapeHtml(t.actionsFrom(currentCardData.reduce((s,c)=>s+c.actions.length,0),currentCardData.length))}</div>
+                    </div>
+                    ${currentCardData.map(renderCardHtml).join('')}
+                    <div class="scroll-footer">YMIND · ${dateStr}</div>
+                </div>`;
+
+            try {
+                const canvas = await html2canvas(container.querySelector('.manifesto-scroll'), {
+                    backgroundColor: '#050608',
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                });
+                const a = document.createElement('a');
+                a.download = 'action-cards.png';
+                a.href = canvas.toDataURL('image/png');
+                a.click();
+                showToast(lang === 'zh' ? '已保存' : 'Saved');
+            } catch(err) {
+                console.error(err);
+                showToast(lang === 'zh' ? '导出失败' : 'Export failed');
+            } finally {
+                container.innerHTML = '';
+            }
+        }
+
+        function copyCardText() {
+            if (!currentCardData || currentCardData.length === 0) return;
+            const lines = [];
+            currentCardData.forEach(card => {
+                lines.push('## ' + card.title);
+                card.actions.forEach(action => {
+                    lines.push('- [ ] ' + (action.rich_summary || action.label));
+                });
+                lines.push('');
+            });
+            navigator.clipboard.writeText(lines.join('\n').trim()).then(() => {
+                showToast(t.copied);
+            });
+        }
+
         function buildExportData() {
             return {
                 meta: __YMIND_DATA__.meta || { title: document.getElementById('graphTitle').textContent },
@@ -1046,7 +1231,7 @@
 
         function exportJSON() {
             downloadFile(JSON.stringify(buildExportData(), null, 2), 'graph.json', 'application/json');
-            showToast('JSON exported');
+            showToast(t.jsonExported);
         }
 
         function saveHTML() {
@@ -1060,7 +1245,7 @@
             downloadFile(newHTML, 'ymindmap-edited.html', 'text/html');
             dirty = false;
             document.getElementById('btnSave').classList.add('hidden');
-            showToast('HTML saved');
+            showToast(t.htmlSaved);
         }
 
         function downloadFile(content, filename, mime) {
