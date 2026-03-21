@@ -19,7 +19,7 @@ If not installed, ask: "Playwright 可以自动抓取对话内容，要装吗？
 
 If available, fetch:
 ```bash
-conda run -n ymind bash scripts/run.sh fetch "<url>"
+bash scripts/run.sh fetch "<url>"
 # prints RUN_DIR — read <run_dir>/raw_chat.json, use items[0].messages
 ```
 
@@ -79,25 +79,25 @@ Critical rules (non-obvious):
 ## Output
 
 1. Write `<run_dir>/graph.json`
-2. Render:
+2. Render (path consistency rule: index root is auto-locked to `dirname(<run_dir>)`, so graph and index always stay in the same workspace tree):
 
 ```bash
-conda run -n ymind bash scripts/run.sh render <run_dir>
+bash scripts/run.sh render <run_dir>
 # validates JSON, renders graph.html + graph.png (screenshot, requires Playwright)
-# then rebuilds ~/ymind-ws/index.json and ~/ymind-ws/index.html automatically
+# then rebuilds <ymind_dir>/index.json and <ymind_dir>/index.html automatically
 ```
 
 3. Output Markdown summary (format in `references/graph-schema.md`).
 
 Run dir files: `raw_chat.json`, `graph.json`, `graph.html`, `graph.png` (requires Playwright), `meta.json`.
 
-Workspace files (auto-updated after every render):
-- `~/ymind-ws/index.json` — machine-readable session registry
-- `~/ymind-ws/index.html` — visual timeline index, opens each session's graph.html
+Workspace files (auto-updated after every render, in the same root as `<run_dir>`):
+- `<ymind_dir>/index.json` — machine-readable session registry
+- `<ymind_dir>/index.html` — visual timeline index, opens each session's graph.html
 
 To rebuild the index manually at any time:
 ```bash
-conda run -n ymind bash scripts/run.sh index
+bash scripts/run.sh index
 ```
 
 ## Language Rule

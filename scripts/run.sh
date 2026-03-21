@@ -61,9 +61,33 @@ PYEOF
 
   render)
     RUN_DIR="${2:?run.sh render requires a run_dir path}"
+    RUN_DIR="$(cd "$RUN_DIR" 2>/dev/null && pwd || true)"
+    if [ -z "$RUN_DIR" ]; then
+        echo "Error: invalid run_dir path" >&2
+        exit 1
+    fi
+    # Force index workspace to match the run directory root.
+    # This guarantees graph/meta/index stay under the same YMIND_DIR tree.
+    YMIND_DIR="$(cd "$RUN_DIR/.." && pwd)"
+    echo "Workspace dir: $YMIND_DIR"
     GRAPH="$RUN_DIR/graph.json"
+    if [ ! -d "$RUN_DIR" ]; then
+        echo "Error: run dir not found: $RUN_DIR" >&2
+        exit 1
+    fi
+    if [ ! -f "$RUN_DIR/raw_chat.json" ]; then
+        echo "Error: $RUN_DIR/raw_chat.json not found" >&2
+        echo "Hint: use the RUN_DIR returned by fetch, and write graph.json in that same directory." >&2
+        exit 1
+    fi
+    if [ ! -f "$RUN_DIR/meta.json" ]; then
+        echo "Error: $RUN_DIR/meta.json not found" >&2
+        echo "Hint: use the RUN_DIR returned by fetch, and write graph.json in that same directory." >&2
+        exit 1
+    fi
     if [ ! -f "$GRAPH" ]; then
         echo "Error: $GRAPH not found" >&2
+        echo "Hint: extract output must be saved as $RUN_DIR/graph.json (same RUN_DIR as fetch)." >&2
         exit 1
     fi
     GRAPH="$GRAPH" python3 - <<'PYEOF'

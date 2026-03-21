@@ -12,14 +12,27 @@ Share an AI conversation URL → get a visual thinking graph with:
 
 ## Install
 
+This skill is **not published on ClawHub yet**.
+So `clawhub install chat-visualizer-ymind` is not available right now.
+
+### Manual Install
+
+#### OpenClaw
+
 ```bash
-clawhub install chat-visualizer-ymind
+git clone https://github.com/yslenjoy/chat-visualizer-ymind.git ~/.openclaw/skills/chat-visualizer-ymind
 ```
 
-Or from GitHub:
+#### Claude Code
 
 ```bash
-openclaw skills install github:yslenjoy/chat-visualizer-ymind
+git clone https://github.com/yslenjoy/chat-visualizer-ymind.git ~/.claude/skills/chat-visualizer-ymind
+```
+
+#### Codex
+
+```bash
+git clone https://github.com/yslenjoy/chat-visualizer-ymind.git ~/.codex/skills/chat-visualizer-ymind
 ```
 
 ## Usage
@@ -30,7 +43,7 @@ Share a URL:
 Visualize this: https://chatgpt.com/share/xxx
 ```
 
-Supported providers: ChatGPT, Gemini, Claude.
+Supported providers: ChatGPT, Gemini, Claude, Deepseek.
 
 ## Output
 
@@ -68,8 +81,6 @@ Requires Python 3.10+.
 ```bash
 pip install requests playwright && playwright install chromium
 ```
-
-<!-- TODO: 发布前需要解决 Python 环境方案（当前开发用 conda env ymind，用户侧需要替换为 venv 或纯 pip） -->
 
 
 ## License
