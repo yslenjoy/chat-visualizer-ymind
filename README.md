@@ -34,7 +34,11 @@ Want auto-fetch support for another provider? [Open an issue](https://github.com
 
 ## Install
 
-This skill is **not published on ClawHub yet**.
+### ClawHub
+
+```bash
+npx clawhub@latest install chat-visualizer-ymind
+```
 
 ### Manual Install
 

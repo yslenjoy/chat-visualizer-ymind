@@ -34,7 +34,11 @@
 
 ## 安装
 
-该 skill **尚未发布到 ClawHub**。
+### ClawHub
+
+```bash
+npx clawhub@latest install chat-visualizer-ymind
+```
 
 ### 手动安装
 
