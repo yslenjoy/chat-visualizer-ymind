@@ -561,8 +561,8 @@
         const config = {
             colors: { root: '#ffffff', fact: '#8b9dc3', friction: '#FF4D4D', spark: '#00F0FF', action: '#FFE600' },
             sizes: { root: 50, fact: 8, friction: 8, spark: 10, action: 8 },
-            yOffsets: { root: 0, fact: -120, friction: 0, spark: 0, action: 120 },
-            layout: { turnSpacing: 200, verticalCluster: 100, yStrength: 0.7 }
+            yOffsets: { root: 0, fact: -100, friction: -30, spark: 50, action: 130 },
+            layout: { turnSpacing: 200, verticalCluster: 100, yStrength: 0.8 }
             // turnSpacing is overridden dynamically in renderGraph() based on node count
         };
 
@@ -740,13 +740,13 @@
                     .strength(d => {
                         const isRoot = (d.source.id||d.source)==='root'||(d.target.id||d.target)==='root';
                         if (isRoot) return 0;
-                        return (d.relation_type && d.relation_type!=='parent') ? 0.6 : 0.3;
+                        return (d.relation_type && d.relation_type!=='parent') ? 0.3 : 0.3;
                     })
                 )
-                .force('charge', d3.forceManyBody().strength(-400))
-                .force('collision', d3.forceCollide().radius(d=>(config.sizes[d.type]||10)+30).strength(0.9).iterations(3))
-                .force('x', d3.forceX().x(d => d.type==='root' ? 0 : (d.turn_id||0.5)*config.layout.turnSpacing).strength(0.6))
-                .force('y', d3.forceY(d => (config.yOffsets[d.type]||0)+(d.inTurnIndex||0)*40).strength(config.layout.yStrength))
+                .force('charge', d3.forceManyBody().strength(-500))
+                .force('collision', d3.forceCollide().radius(d=>(config.sizes[d.type]||10)+36).strength(1.0).iterations(4))
+                .force('x', d3.forceX().x(d => d.type==='root' ? 0 : (d.turn_id||0.5)*config.layout.turnSpacing).strength(0.8))
+                .force('y', d3.forceY(d => (config.yOffsets[d.type]||0)+(d.inTurnIndex||0)*60).strength(config.layout.yStrength))
                 .force('proximityRepel', function(alpha) {
                     const ns = visibleData.nodes;
                     for (let i=0;i<ns.length;i++) {
@@ -824,8 +824,8 @@
             if (view === 'timeline') {
                 // Restore turn-based horizontal spread
                 simulation
-                    .force('x', d3.forceX().x(d => d.type==='root' ? 0 : (d.turn_id||0.5)*config.layout.turnSpacing).strength(0.6))
-                    .force('y', d3.forceY(d => (config.yOffsets[d.type]||0)+(d.inTurnIndex||0)*40).strength(config.layout.yStrength));
+                    .force('x', d3.forceX().x(d => d.type==='root' ? 0 : (d.turn_id||0.5)*config.layout.turnSpacing).strength(0.8))
+                    .force('y', d3.forceY(d => (config.yOffsets[d.type]||0)+(d.inTurnIndex||0)*60).strength(config.layout.yStrength));
             } else {
                 // Structure: group by type into quadrants
                 const w = window.innerWidth, h = window.innerHeight;
