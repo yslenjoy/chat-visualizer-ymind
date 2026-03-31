@@ -733,6 +733,13 @@
                 group.forEach((n,i) => { n.inTurnIndex = i-(group.length-1)/2; });
             });
 
+            // --- PRE-POSITION: seed positions to avoid collinear starting layout ---
+            visibleData.nodes.forEach(n => {
+                if (n.type === 'root') { n.x = 0; n.y = 0; return; }
+                n.x = (n.turn_id || 0.5) * config.layout.turnSpacing + (Math.random() - 0.5) * 90;
+                n.y = (config.yOffsets[n.type] || 0) + (n.inTurnIndex || 0) * 60 + (Math.random() - 0.5) * 60;
+            });
+
             // --- FORCE SIMULATION ---
             simulation = d3.forceSimulation(visibleData.nodes)
                 .force('link', d3.forceLink(visibleData.links).id(d=>d.id)
@@ -761,6 +768,29 @@
                             }
                         }
                     }
+                })
+                .force('edgeRepel', function(alpha) {
+                    const ns = visibleData.nodes;
+                    const ls = visibleData.links;
+                    for (const link of ls) {
+                        const a = link.source, b = link.target;
+                        if (!a || !b || a.type==='root' || b.type==='root') continue;
+                        const abx = b.x - a.x, aby = b.y - a.y;
+                        const len2 = abx*abx + aby*aby;
+                        if (len2 < 1) continue;
+                        for (const n of ns) {
+                            if (n === a || n === b || n.type === 'root') continue;
+                            const t = Math.max(0, Math.min(1, ((n.x-a.x)*abx + (n.y-a.y)*aby) / len2));
+                            const px = a.x + t*abx - n.x;
+                            const py = a.y + t*aby - n.y;
+                            const dist = Math.sqrt(px*px + py*py);
+                            if (dist < 55 && dist > 0.5) {
+                                const f = (55 - dist) / dist * 0.5 * alpha;
+                                n.vx -= px * f;
+                                n.vy -= py * f;
+                            }
+                        }
+                    }
                 });
 
             simulation.on('tick', () => {
@@ -783,10 +813,9 @@
             const root = data.nodes.find(n => n.type==='root');
             if (root) { root.fx=0; root.fy=0; }
 
-            // Auto-fit when simulation cools
-            simulation.on('end', () => fitAll(600));
-            // Also fit early so user sees something quickly
-            setTimeout(() => fitAll(750), 1200);
+            // Fit immediately using pre-positioned coordinates, then refine when simulation settles
+            setTimeout(() => fitAll(300), 30);
+            simulation.on('end', () => fitAll(400));
 
             updateRelationLegend(data);
         }
