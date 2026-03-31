@@ -254,6 +254,7 @@
                 rgba(var(--card-rgb, 0,240,255), 0.04) 0%,
                 transparent 60%);
             opacity: 0; transition: opacity 0.25s;
+            pointer-events: none;
         }
         .session-card:hover {
             border-color: rgba(var(--card-rgb, 0,240,255), 0.3);
@@ -337,10 +338,22 @@
         }
         .session-card:hover .open-arrow { transform: translateX(3px); }
 
-        .url-hint {
-            font-size: 9px; color: #374151;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 200px;
+        .source-link {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 10px; font-weight: 500; letter-spacing: 0.03em;
+            color: #4b5563;
+            padding: 3px 8px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.03);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .source-link:hover {
+            color: #9ca3af;
+            border-color: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.06);
         }
 
         /* ── Empty state ── */
@@ -404,6 +417,7 @@ const i18n = {
     filterAll:   isZh ? 'All'                 : 'All',
     untitled:    isZh ? '— 未命名对话 —'      : '— Untitled —',
     openGraph:   isZh ? '打开思维图'           : 'Open graph',
+    sourceLink:  isZh ? '原始对话'             : 'Source',
     empty:       isZh ? '还没有分析记录'       : 'No sessions yet',
     countSuffix: isZh ? n => `${n} 条`        : n => `${n}`,
 };
@@ -503,14 +517,15 @@ function buildCard(run) {
     const title = run.title ?? '';
     const hasTitle = title.trim().length > 0;
 
-    const card = document.createElement('a');
+    const card = document.createElement('div');
     card.className = 'session-card';
-    card.href = graphHref;
-    card.target = '_blank';
-    card.rel = 'noopener';
     card.dataset.provider = run.provider ?? '';
     card.style.setProperty('--card-rgb', prov.rgb);
     card.style.setProperty('--card-rgb2', '189,0,255');
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+        if (!e.target.closest('.source-link')) window.open(graphHref, '_blank');
+    });
 
     card.innerHTML = `
         <div class="card-thumb">
@@ -550,7 +565,12 @@ function buildCard(run) {
                         <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </span>
-                ${run.url ? `<span class="url-hint" title="${run.url}">${run.url.replace(/^https?:\/\//, '').split('/')[0]}</span>` : ''}
+                ${run.url ? `<a class="source-link" href="${run.url}" target="_blank" rel="noopener" title="${run.url}" onclick="event.stopPropagation();">
+                    <svg width="10" height="10" viewBox="0 0 12 12" fill="none">
+                        <path d="M5 2H2a1 1 0 0 0-1 1v7a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V7M7 1h4m0 0v4m0-4L5.5 6.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    ${i18n.sourceLink}
+                </a>` : ''}
             </div>
         </div>
     `;
