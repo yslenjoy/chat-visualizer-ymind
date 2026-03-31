@@ -71,7 +71,7 @@ Note: `g.co/gemini/share/...` short links work — script auto-resolves them.
 Read `references/graph-schema.md` for node types, edge types, label rules, and output schema.
 
 Critical rules (non-obvious):
-- `turn_id`: assign actual turn number (1-based). Never default all nodes to the same value — this drives horizontal spread in the D3 visualization.
+- `turn_id`: assign actual turn number (1-based). One user message + one AI response = 1 turn — not one message per turn. A 3-round conversation yields turn_id 1, 2, 3 only. Never default all nodes to the same value — this drives horizontal spread in the D3 visualization.
 - Extraction density: scale with the substance of each turn. Brief or routine turns may yield 1-2 nodes; rich, multi-point turns can yield more. Let the content guide the count — the goal is to capture the meaningful thinking, not to hit a fixed number.
 - Edges: only add if the connection passes the "obviously yes" test.
 - Reasoning shifts: look for moments where thinking fundamentally changed. Capture what changed, from what, to what, and why.

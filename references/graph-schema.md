@@ -118,7 +118,7 @@ Action: {what to do}
         "type": "fact | friction | spark | action",
         "rich_summary": "string - 1-2 sentence self-contained description",
         "source": "user | ai",
-        "turn_id": "number - which conversation turn"
+        "turn_id": "number - which conversation turn (1-based). One user message + one AI response = 1 turn. A 3-round conversation has turn_id 1, 2, 3 — never higher."
       }
     ],
     "edges": [
