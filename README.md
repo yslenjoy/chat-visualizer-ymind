@@ -71,7 +71,7 @@ Results are saved to `~/ymind-ws/` by default (override with `YMIND_DIR`). Each 
   20260319-143021_chatgpt/
     raw_chat.json               ← fetched conversation
     graph.json                  ← extracted thinking graph
-    graph.html                  ← D3.js visualization
+    graph.html                  ← D3.js visualization (split view with chat panel if raw_chat.json exists)
     graph.png                   ← screenshot
     meta.json                   ← provider, url, title, created_at
 ```

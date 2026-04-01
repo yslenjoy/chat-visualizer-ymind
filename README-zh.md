@@ -71,7 +71,7 @@ git clone https://github.com/yslenjoy/chat-visualizer-ymind.git ~/.codex/skills/
   20260319-143021_chatgpt/
     raw_chat.json               ← 抓取的原始对话
     graph.json                  ← 提取的思维图数据
-    graph.html                  ← D3.js 可视化
+    graph.html                  ← D3.js 可视化（有 raw_chat.json 时左右分栏，左边原始对话）
     graph.png                   ← 截图
     meta.json                   ← provider、url、标题、创建时间
 ```
