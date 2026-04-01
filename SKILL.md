@@ -91,6 +91,8 @@ bash scripts/run.sh render <run_dir>
 # then rebuilds <ymind_dir>/index.json and <ymind_dir>/index.html automatically
 ```
 
+   `graph.html` is a **split-view** output when `raw_chat.json` is present in `<run_dir>`: left panel shows the original conversation, right panel shows the thinking map. If `raw_chat.json` is absent, only the graph is shown (no split).
+
 3. Output Markdown summary (format in `references/graph-schema.md`).
 4. If running as a bot with chat output capability, send the graph image — see **Bot Send** below.
 

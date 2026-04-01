@@ -32,14 +32,40 @@ def slugify(text: str, max_len: int = 40) -> str:
     return text[:max_len].rstrip("-")
 
 
-def render(graph_json: dict, template: str) -> str:
-    """Inject graph data into the HTML template."""
+def load_chat_messages(graph_input_path: Path) -> list | None:
+    """Load and clean messages from raw_chat.json in the same directory, if present."""
+    raw_chat_path = graph_input_path.parent / "raw_chat.json"
+    if not raw_chat_path.exists():
+        return None
+    try:
+        with open(raw_chat_path, "r", encoding="utf-8") as f:
+            raw = json.load(f)
+        items = raw.get("items") or []
+        if not items:
+            return None
+        messages = items[0].get("messages") or []
+        cleaned = []
+        for msg in messages:
+            role = msg.get("role", "")
+            content = msg.get("content", "")
+            if role == "user" and content.startswith("You said\n\n"):
+                content = content[len("You said\n\n"):]
+            cleaned.append({"role": role, "content": content})
+        return cleaned if cleaned else None
+    except Exception:
+        return None
+
+
+def render(graph_json: dict, template: str, chat_messages: list | None = None) -> str:
+    """Inject graph data (and optional chat messages) into the HTML template."""
     title = ""
     if "meta" in graph_json and graph_json["meta"]:
         title = graph_json["meta"].get("title", "")
 
     html = template.replace("{{TITLE}}", title or "Untitled")
     html = html.replace("{{GRAPH_JSON}}", json.dumps(graph_json, ensure_ascii=False))
+    chat_json_str = json.dumps(chat_messages, ensure_ascii=False) if chat_messages is not None else "null"
+    html = html.replace("{{CHAT_JSON}}", chat_json_str)
     return html
 
 
@@ -68,8 +94,11 @@ def main() -> int:
 
     template = tmpl_path.read_text(encoding="utf-8")
 
+    # Load chat messages for split view (optional)
+    chat_messages = load_chat_messages(input_path)
+
     # Render
-    html = render(graph_data, template)
+    html = render(graph_data, template, chat_messages)
 
     # Output path
     if args.out:

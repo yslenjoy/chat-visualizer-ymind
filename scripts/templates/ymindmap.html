@@ -363,6 +363,81 @@
 
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── Split mode ── */
+        body.split-mode { display: flex; flex-direction: row; overflow: hidden; }
+        body.split-mode .graph-container { flex: 1; min-width: 0; }
+
+        .chat-panel {
+            display: none;
+            width: 38%; min-width: 280px; max-width: 520px;
+            flex-direction: column;
+            border-right: 1px solid rgba(255,255,255,0.07);
+            background: #0b0f19;
+            overflow: hidden; flex-shrink: 0;
+            z-index: 5;
+        }
+        body.split-mode .chat-panel { display: flex; }
+
+        .chat-panel-header {
+            padding: 13px 16px; flex-shrink: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            background: rgba(11,15,25,0.95); backdrop-filter: blur(12px);
+        }
+        .chat-panel-title {
+            font-size: 12px; font-weight: 500; color: #e5e7eb;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .chat-panel-sub { font-size: 10px; color: #6b7280; margin-top: 2px; }
+
+        .chat-messages-wrap {
+            flex: 1; overflow-y: auto; padding: 14px 12px;
+            display: flex; flex-direction: column; gap: 12px;
+            scroll-behavior: smooth;
+        }
+        .chat-messages-wrap::-webkit-scrollbar { width: 3px; }
+        .chat-messages-wrap::-webkit-scrollbar-thumb { background: #334155; border-radius: 2px; }
+
+        .chat-msg { display: flex; flex-direction: column; gap: 3px; max-width: 94%; }
+        .chat-msg.user { align-self: flex-end; align-items: flex-end; }
+        .chat-msg.assistant { align-self: flex-start; align-items: flex-start; }
+        .chat-msg-role {
+            font-size: 9px; font-weight: 600; letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .chat-msg.user .chat-msg-role { color: rgba(0,240,255,0.55); }
+        .chat-msg.assistant .chat-msg-role { color: rgba(189,0,255,0.55); }
+        .chat-msg-bubble {
+            padding: 9px 12px; border-radius: 11px;
+            font-size: 11.5px; line-height: 1.65; font-weight: 300;
+            color: #e5e7eb; white-space: pre-wrap; word-break: break-word;
+        }
+        .chat-msg.user .chat-msg-bubble {
+            background: rgba(0,240,255,0.07);
+            border: 1px solid rgba(0,240,255,0.18);
+            border-bottom-right-radius: 3px;
+        }
+        .chat-msg.assistant .chat-msg-bubble {
+            background: rgba(189,0,255,0.05);
+            border: 1px solid rgba(189,0,255,0.13);
+            border-bottom-left-radius: 3px;
+        }
+
+        .split-divider {
+            display: none;
+            width: 4px; flex-shrink: 0; cursor: col-resize;
+            background: linear-gradient(to bottom,
+                rgba(189,0,255,0.3), rgba(0,240,255,0.3));
+            transition: background 0.2s;
+            z-index: 6;
+        }
+        body.split-mode .split-divider { display: block; }
+        .split-divider:hover, .split-divider.dragging {
+            background: linear-gradient(to bottom,
+                rgba(189,0,255,0.7), rgba(0,240,255,0.7));
+        }
+        /* Block pointer events on svg during resize drag */
+        body.resizing svg { pointer-events: none; }
     </style>
 </head>
 <body>
@@ -372,6 +447,16 @@
         <div class="ambient-blob pink"></div>
         <div class="ambient-blob deep-cyan"></div>
     </div>
+
+    <!-- Chat panel (split mode only) -->
+    <div class="chat-panel" id="chatPanel">
+        <div class="chat-panel-header">
+            <div class="chat-panel-title" id="chatPanelTitle"></div>
+            <div class="chat-panel-sub" id="chatPanelSub"></div>
+        </div>
+        <div class="chat-messages-wrap" id="chatMessagesWrap"></div>
+    </div>
+    <div class="split-divider" id="splitDivider"></div>
 
     <main class="graph-container" id="graphContainer">
         <svg id="graph"></svg>
@@ -457,6 +542,7 @@
     <script>
         // ============== Data (injected by render-html.py) ==============
         const __YMIND_DATA__ = {{GRAPH_JSON}};
+        const __CHAT_MESSAGES__ = {{CHAT_JSON}};
 
         // ============== State ==============
         let graphData = null;
@@ -601,7 +687,61 @@
             t = i18n[lang];
             applyLang();
             updateActionBadge();
+            initSplitMode();
             renderGraph(graphData);
+        }
+
+        // ============== Split Mode ==============
+        function initSplitMode() {
+            const msgs = __CHAT_MESSAGES__;
+            if (!msgs || msgs.length === 0) return;
+
+            document.body.classList.add('split-mode');
+
+            // Header
+            const titleEl = document.getElementById('chatPanelTitle');
+            const subEl = document.getElementById('chatPanelSub');
+            if (titleEl) titleEl.textContent = (graphData && graphData.title) ? graphData.title : '';
+            if (subEl) subEl.textContent = Math.ceil(msgs.length / 2) + (navigator.language.startsWith('zh') ? ' 轮对话' : ' turns');
+
+            // Messages
+            const wrap = document.getElementById('chatMessagesWrap');
+            msgs.forEach(msg => {
+                const div = document.createElement('div');
+                div.className = 'chat-msg ' + msg.role;
+                const role = document.createElement('div');
+                role.className = 'chat-msg-role';
+                role.textContent = msg.role === 'user' ? 'You' : 'AI';
+                const bubble = document.createElement('div');
+                bubble.className = 'chat-msg-bubble';
+                bubble.textContent = msg.content;
+                div.appendChild(role);
+                div.appendChild(bubble);
+                wrap.appendChild(div);
+            });
+
+            // Drag resize
+            const divider = document.getElementById('splitDivider');
+            const panel = document.getElementById('chatPanel');
+            let dragging = false;
+            divider.addEventListener('mousedown', e => {
+                dragging = true;
+                divider.classList.add('dragging');
+                document.body.classList.add('resizing');
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const totalW = document.body.offsetWidth;
+                const newW = Math.max(240, Math.min(totalW * 0.6, e.clientX));
+                panel.style.width = newW + 'px';
+            });
+            document.addEventListener('mouseup', () => {
+                if (!dragging) return;
+                dragging = false;
+                divider.classList.remove('dragging');
+                document.body.classList.remove('resizing');
+            });
         }
 
         // ============== Graph Rendering ==============
@@ -719,7 +859,8 @@
 
             // --- ADAPTIVE TURN SPACING ---
             const maxTurnId = Math.max(...visibleData.nodes.filter(n=>n.turn_id).map(n=>n.turn_id), 1);
-            config.layout.turnSpacing = Math.min(180, Math.max(70, (window.innerWidth * 0.68) / (maxTurnId + 1)));
+            const graphW = document.getElementById('graphContainer').offsetWidth || window.innerWidth;
+            config.layout.turnSpacing = Math.min(180, Math.max(70, (graphW * 0.68) / (maxTurnId + 1)));
 
             // --- PRE-PROCESS: in-turn index ---
             const turnGroups = {};
