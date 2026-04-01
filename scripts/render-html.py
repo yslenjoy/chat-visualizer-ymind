@@ -151,10 +151,20 @@ def _take_screenshot(html_path: Path, out_path: Path) -> None:
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
-            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page = browser.new_page(viewport={"width": 1440, "height": 900}, device_scale_factor=2)
             page.goto(url, wait_until="networkidle")
             # Wait for D3 simulation to settle
             time.sleep(3)
+            # Hide chat panel, re-fit graph, then screenshot
+            page.evaluate("""
+                document.body.classList.remove('split-mode');
+                ['chatPanel','splitDivider'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+                if (typeof fitAll === 'function') fitAll(400);
+            """)
+            time.sleep(0.6)
             page.screenshot(path=str(out_path), full_page=False)
             browser.close()
         print(f"Screenshot: {out_path}")
