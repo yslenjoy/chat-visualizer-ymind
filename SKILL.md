@@ -5,6 +5,21 @@ description: Turn AI chat transcripts into structured YMind thinking maps with r
 
 # Chat Visualizer - YMind
 
+## Version Check
+
+Run **once** at the start of each skill session. First locate the script (works regardless of which client installed the skill):
+
+```bash
+find "$HOME" -maxdepth 8 -path "*/chat-visualizer-ymind/scripts/check-version.py" 2>/dev/null | head -1
+```
+
+Then run it with `python3 <found_path>`.
+
+- Empty output → already up to date or network unavailable, proceed silently.
+- Output `UPDATE|X.X.X|Y.Y.Y|<skill_dir>|<notes>` → tell the user in English:
+  **"chat-visualizer-ymind vY.Y.Y is available** (you're on vX.X.X).\n\<notes\>\nUpdate: `cd <skill_dir> && git fetch && git checkout vY.Y.Y` — continue with current version?"
+  Wait for their reply before proceeding.
+
 ## Input
 
 Two ways to get conversation data:
