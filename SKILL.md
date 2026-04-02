@@ -10,7 +10,7 @@ description: Turn AI chat transcripts into structured YMind thinking maps with r
 Run **once** at the start of each skill session. First locate the script (works regardless of which client installed the skill):
 
 ```bash
-find ~/.codex/skills ~/.claude/skills ~/skills -maxdepth 3 -name "check-version.py" 2>/dev/null | head -1
+find ~/.codex/skills ~/.claude/skills ~/.openclaw/skills ~/skills -maxdepth 3 -name "check-version.py" 2>/dev/null | head -1
 ```
 
 Then run it with `python3 <found_path>`.
