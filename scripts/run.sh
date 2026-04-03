@@ -24,6 +24,8 @@ _detect_provider() {
     case "$1" in
       *chatgpt.com*)        echo "chatgpt" ;;
       *gemini.google.com*)  echo "gemini" ;;
+      *g.co/gemini*)        echo "gemini" ;;
+      *g.co/*)              echo "gemini" ;;
       *claude.ai*)          echo "claude" ;;
       *deepseek.com*)       echo "deepseek" ;;
       *doubao.com*)         echo "doubao" ;;

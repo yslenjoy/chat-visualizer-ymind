@@ -438,6 +438,130 @@
         }
         /* Block pointer events on svg during resize drag */
         body.resizing svg { pointer-events: none; }
+
+        /* ── Light Mode (A: Enhanced Aurora) ── */
+        body.light-mode {
+            background: radial-gradient(circle at 50% 50%, #f5f8ff 0%, #edf1fb 50%, #e4eaf6 100%);
+            color: #475569;
+        }
+        body.light-mode ::-webkit-scrollbar-thumb { background: #c7d0e0; }
+
+        body.light-mode .ambient-blob { mix-blend-mode: multiply; opacity: 0.20; }
+        body.light-mode .ambient-blob.violet {
+            background: radial-gradient(circle, rgba(112,0,255,0.55) 0%, rgba(112,0,255,0.06) 60%, transparent 80%);
+        }
+        body.light-mode .ambient-blob.cyan {
+            background: radial-gradient(circle, rgba(0,200,255,0.48) 0%, rgba(0,200,255,0.05) 60%, transparent 80%);
+        }
+        body.light-mode .ambient-blob.pink {
+            background: radial-gradient(circle, rgba(255,0,128,0.38) 0%, rgba(255,0,128,0.04) 60%, transparent 80%);
+        }
+        body.light-mode .ambient-blob.deep-cyan {
+            background: radial-gradient(circle, rgba(0,180,240,0.38) 0%, rgba(0,180,240,0.04) 60%, transparent 80%);
+        }
+
+        body.light-mode .hud-btn {
+            background: rgba(255,255,255,0.75); border-color: rgba(0,0,0,0.08);
+            color: #556070; box-shadow: 0 2px 10px rgba(80,100,160,0.1);
+        }
+        body.light-mode .hud-btn:hover { border-color: var(--aura-cyan); color: #0f172a; background: rgba(255,255,255,0.9); }
+        body.light-mode .hud-title {
+            color: rgba(0,0,0,0.5); background: rgba(255,255,255,0.65);
+            box-shadow: 0 2px 8px rgba(80,100,160,0.08);
+        }
+        body.light-mode .view-toggle {
+            background: rgba(255,255,255,0.75); border-color: rgba(0,0,0,0.08);
+            box-shadow: 0 2px 10px rgba(80,100,160,0.1);
+        }
+        body.light-mode .toggle-btn { color: #8a9ab8; }
+        body.light-mode .toggle-btn:first-child { border-right-color: rgba(0,0,0,0.06); }
+        body.light-mode .toggle-btn:hover { color: #1e293b; }
+        body.light-mode .toggle-btn.active { background: rgba(0,220,255,0.1); color: #0099bb; }
+
+        body.light-mode .legend-panel {
+            background: rgba(255,255,255,0.75); border-color: rgba(0,0,0,0.07);
+            box-shadow: 0 2px 10px rgba(80,100,160,0.1);
+        }
+        body.light-mode .legend-title { color: #8a9ab8; }
+
+        body.light-mode .tooltip {
+            background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.07);
+            box-shadow: 0 4px 20px rgba(80,100,160,0.15);
+        }
+        body.light-mode .tooltip-label { color: #0f172a; }
+        body.light-mode .tooltip-desc { color: #475569; }
+        body.light-mode .tooltip-hint { color: #94a3b8; border-top-color: rgba(0,0,0,0.05); }
+
+        body.light-mode .node-label { fill: #1e293b; text-shadow: none; }
+        body.light-mode .node-group.root .node-label { fill: #0a0f1e; text-shadow: none; }
+        body.light-mode .turn-badge { fill: #94a3b8; }
+
+        body.light-mode .node-shape { filter: drop-shadow(0 0 5px currentColor) drop-shadow(0 1px 4px rgba(0,0,0,0.12)); }
+        body.light-mode .node-group:hover .node-shape { filter: drop-shadow(0 0 9px currentColor) drop-shadow(0 2px 6px rgba(0,0,0,0.15)); }
+        body.light-mode .node-group.selected .node-shape { filter: drop-shadow(0 0 12px currentColor) drop-shadow(0 2px 8px rgba(0,0,0,0.2)); }
+
+        body.light-mode .link.structural { stroke: #a0aec0; stroke-opacity: 0.35; }
+        body.light-mode .link.leads_to { stroke: #0088bb; stroke-opacity: 0.55; }
+        body.light-mode .link.causes { stroke: #cc3333; stroke-opacity: 0.55; }
+        body.light-mode .link.resolves { stroke: #7733bb; stroke-opacity: 0.55; }
+        body.light-mode .link.opposes { stroke: #bb6600; stroke-opacity: 0.55; }
+
+        body.light-mode .collapse-btn circle { fill: rgba(255,255,255,0.7); stroke: rgba(0,0,0,0.15); }
+        body.light-mode .collapse-btn:hover circle { fill: rgba(255,255,255,0.9); }
+        body.light-mode .collapse-btn text { fill: #334155; }
+
+        body.light-mode .status-toast {
+            background: rgba(255,255,255,0.92); border-color: rgba(0,0,0,0.07);
+            color: #1e293b; box-shadow: 0 4px 16px rgba(80,100,160,0.12);
+        }
+        body.light-mode .edit-input { background: rgba(255,255,255,0.97); color: #0f172a; }
+
+        body.light-mode .chat-panel { background: #f2f5fd; border-right-color: rgba(0,0,0,0.06); }
+        body.light-mode .chat-panel-header {
+            background: rgba(245,248,255,0.97); border-bottom-color: rgba(0,0,0,0.05);
+        }
+        body.light-mode .chat-panel-title { color: #1e293b; }
+        body.light-mode .chat-panel-sub { color: #8a9ab8; }
+        body.light-mode .chat-messages-wrap::-webkit-scrollbar-thumb { background: #c7d0e0; }
+        body.light-mode .chat-msg-bubble { color: #1e293b; }
+        body.light-mode .chat-msg.user .chat-msg-bubble {
+            background: rgba(0,200,255,0.08); border-color: rgba(0,200,255,0.25);
+        }
+        body.light-mode .chat-msg.assistant .chat-msg-bubble {
+            background: rgba(112,0,255,0.06); border-color: rgba(112,0,255,0.15);
+        }
+        body.light-mode .split-divider {
+            background: linear-gradient(to bottom, rgba(112,0,255,0.18), rgba(0,200,255,0.18));
+        }
+        body.light-mode .split-divider:hover, body.light-mode .split-divider.dragging {
+            background: linear-gradient(to bottom, rgba(112,0,255,0.45), rgba(0,200,255,0.45));
+        }
+
+        body.light-mode .modal-overlay { background: rgba(237,241,251,0.92); }
+        body.light-mode .manifesto-card {
+            background: linear-gradient(160deg, #ffffff 0%, #edf1fb 100%);
+            border-color: rgba(0,0,0,0.06);
+            box-shadow: 0 20px 50px rgba(80,100,160,0.1), 0 0 0 1px rgba(255,255,255,0.8) inset;
+            color: #1e293b;
+        }
+        body.light-mode .card-glow { background: radial-gradient(circle, rgba(0,200,255,0.1) 0%, transparent 70%); }
+        body.light-mode .modal-title { color: #0f172a; text-shadow: 0 0 20px rgba(0,200,255,0.2); }
+        body.light-mode .modal-subtitle { color: rgba(0,0,0,0.38); }
+        body.light-mode .card-title { color: #0f172a; text-shadow: none; }
+        body.light-mode .card-content { color: rgba(0,0,0,0.72); }
+        body.light-mode .card-source { color: #94a3b8; }
+        body.light-mode .card-quote { color: rgba(0,0,0,0.25); }
+        body.light-mode .card-brand { color: #000; opacity: 0.12; }
+        body.light-mode .card-footer { border-top-color: rgba(0,0,0,0.05); }
+        body.light-mode .action-btn.secondary {
+            background: rgba(255,255,255,0.7); color: #1e293b;
+            border-color: rgba(0,0,0,0.09); box-shadow: 0 1px 6px rgba(80,100,160,0.08);
+        }
+        body.light-mode .action-btn.secondary:hover { background: rgba(255,255,255,0.9); }
+        body.light-mode .action-btn.icon-btn { color: #64748b; }
+        body.light-mode .action-btn.icon-btn:hover { color: #1e293b; }
+        body.light-mode .cards-indicator-dot { background: rgba(0,0,0,0.12); }
+        body.light-mode .cards-container::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); }
     </style>
 </head>
 <body>
@@ -494,6 +618,14 @@
 
         <!-- HUD Bottom Right: Action Cards button -->
         <div class="hud-bottom-right">
+            <div class="hud-btn" id="btnTheme" onclick="toggleTheme()" title="Toggle light / dark mode">
+                <svg id="themeIconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+                <svg id="themeIconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+                    <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+            </div>
             <div class="hud-btn accent" id="btnActions" onclick="openActionCards()" title="Action Cards">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
@@ -1437,7 +1569,24 @@
             return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         }
 
+
+        // ============== Theme Toggle ==============
+        function toggleTheme() {
+            const isLight = document.body.classList.toggle('light-mode');
+            document.getElementById('themeIconMoon').style.display = isLight ? 'none' : '';
+            document.getElementById('themeIconSun').style.display = isLight ? '' : 'none';
+            localStorage.setItem('ymind-theme', isLight ? 'light' : 'dark');
+        }
+        function initTheme() {
+            const saved = localStorage.getItem('ymind-theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-mode');
+                document.getElementById('themeIconMoon').style.display = 'none';
+                document.getElementById('themeIconSun').style.display = '';
+            }
+        }
         // ============== Start ==============
+        initTheme();
         init();
     </script>
 </body>

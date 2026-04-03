@@ -75,7 +75,7 @@ Users often give the wrong link type. Correct them if needed:
 |----------|-------------|-------------|
 | ChatGPT | `chatgpt.com/share/xxx` | `chatgpt.com/c/xxx` (private chat URL) |
 | Claude | `claude.ai/share/xxx` | `claude.ai/chat/xxx` (private chat URL) |
-| Gemini | `gemini.google.com/share/xxx` | `gemini.google.com/app/xxx` (app URL) |
+| Gemini | `gemini.google.com/share/xxx` or `g.co/gemini/share/xxx` | `gemini.google.com/app/xxx` (app URL) |
 | DeepSeek | `chat.deepseek.com/share/xxx` | `chat.deepseek.com/a/xxx` (private chat URL) |
 | Doubao | `www.doubao.com/thread/xxx` | `www.doubao.com/chat/xxx` (private chat URL) |
 
