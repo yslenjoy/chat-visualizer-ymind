@@ -236,7 +236,7 @@ def _fetch_gemini(url: str, timeout: int) -> Tuple[Optional[str], List[Dict[str,
 # --- Claude (Playwright, headed mode for Cloudflare) ---
 
 def _launch_headed_browser(p, timeout_ms: int):
-    """Launch a headed Chromium browser with anti-detection for Cloudflare."""
+    """Launch a headed Chromium browser for platforms that require a standard browser environment (e.g. Cloudflare-protected share pages)."""
     browser = p.chromium.launch(
         headless=False,
         args=["--disable-blink-features=AutomationControlled"],

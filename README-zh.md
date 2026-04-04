@@ -62,25 +62,34 @@ git clone https://github.com/yslenjoy/chat-visualizer-ymind.git ~/.codex/skills/
 
 ## 输出结构
 
-结果默认保存到 `~/ymind-ws/`（可通过 `YMIND_DIR` 覆盖）。每次运行生成一个独立文件夹 —— 你的个人思维图库。
+结果默认保存到 `~/ymind-ws/`（可通过 `YMIND_DIR` 覆盖）。对话越积越多，workspace 会自动构建成一个个人思维图库，通过 `index.html` 统一浏览。
 
 ```
 ~/ymind-ws/
-  index.html                    ← 所有 session 的可视化时间线
-  index.json                    ← 机器可读的 session 索引
-  20260319-143021_chatgpt/
-    raw_chat.json               ← 抓取的原始对话
-    graph.json                  ← 提取的思维图数据
-    graph.html                  ← D3.js 可视化（有 raw_chat.json 时左右分栏，左边原始对话）
-    graph.png                   ← 截图
-    meta.json                   ← provider、url、标题、创建时间
+  index.html                        ← 所有 session 的可视化时间线（自动更新）
+  index.json                        ← 机器可读的 session 索引
+  │
+  ├── 20260404-083000_gemini/
+  │     raw_chat.json               ← 抓取的原始对话
+  │     graph.json                  ← 提取的思维图数据
+  │     graph.html                  ← D3.js 可视化
+  │     graph.png                   ← 截图
+  │     meta.json                   ← provider、url、标题、创建时间
+  │
+  ├── 20260403-142000_chatgpt/
+  ├── 20260403-100500_claude/
+  ├── 20260401-160000_deepseek/
+  ├── 20260330-091500_paste/
+  └── 20260328-203000_chatgpt/
 ```
+
+![YMind Workspace — index.html](assets/index-demo.png)
 
 ## 隐私
 
 - **不存储 Cookie** —— 抓取使用全新浏览器上下文，不缓存任何会话数据
 - **完全本地** —— 所有输出只保存在本机，不上传任何内容
-- **无外部服务** —— 渲染完全离线，图的 HTML 文件自包含
+- **数据不出本机** —— 所有对话数据仅保存在本地；渲染出的 HTML 通过 CDN 加载字体和可视化库（D3.js、html2canvas），需要联网才能正常显示
 - 对话链接仅用于抓取你提供的公开分享页
 
 ## 处理流程

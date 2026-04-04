@@ -1,6 +1,6 @@
 ---
 name: chat-visualizer-ymind
-description: Turn AI chat transcripts into structured YMind thinking maps with reasoning nodes, thinking shifts, and action items — rendered as an interactive D3.js force graph. Use this skill whenever a user shares a ChatGPT, Gemini, Claude, or DeepSeek conversation URL and wants to visualize, analyze, or extract insights from it — even if they just say "help me understand this chat", "what was decided here", or "summarize the key takeaways" without explicitly asking for a graph or visualization.
+description: Turn AI chat transcripts into interactive D3.js thinking maps with reasoning nodes, thinking shifts, and action items. Invoke this skill when the user shares a public share link from any AI chatbot or assistant (ChatGPT, Gemini, Claude, DeepSeek, Doubao, etc.), or pastes conversation text directly. Also applies when the user wants to visualize, analyze, or extract insights from a chat, even without explicit mention of a graph (e.g. "help me understand this chat", "what was decided here", "summarize the key takeaways").
 ---
 
 # Chat Visualizer - YMind
@@ -30,7 +30,7 @@ Requires Playwright. Check first:
 ```bash
 python3 -c "import playwright" 2>/dev/null && echo "OK" || echo "NOT INSTALLED"
 ```
-If not installed, ask: "Playwright 可以自动抓取对话内容，要装吗？（`pip install playwright && playwright install chromium`，一次性操作）" If they decline, use Way 2.
+If not installed, ask the user (in the conversation language) whether they'd like to install it — it enables auto-fetching URLs with one setup step: `pip install playwright && playwright install chromium`. If they decline, use Way 2.
 
 If available, fetch:
 ```bash
@@ -132,7 +132,7 @@ If `message` tool is available and `graph.png` was generated, send the graph ima
 
 ## Language Rule
 
-All output (labels, summaries, analysis) must match the conversation language.
+All output and user-facing messages (labels, summaries, analysis, install prompts, questions) must match the conversation language.
 
 ## Setup
 
